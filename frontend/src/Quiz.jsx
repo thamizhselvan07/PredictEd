@@ -2,20 +2,33 @@ import React, { useState, useEffect } from 'react';
 import Navbar from './components/Navbar';
 import { Card, CardContent } from './components/Card';
 import { Button } from './components/Button';
+import { DifficultyBadge } from './components/Badge';
+import { LoadingSpinner, PageLoader } from './components/LoadingSpinner';
 import { getNextQuestion, submitAnswer } from './api';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Loader2 } from 'lucide-react';
+import { 
+    CheckCircle, 
+    XCircle, 
+    ArrowRight, 
+    Clock, 
+    Zap,
+    Brain,
+    TrendingUp
+} from 'lucide-react';
 
 export default function Quiz() {
     const [question, setQuestion] = useState(null);
     const [loading, setLoading] = useState(true);
     const [feedback, setFeedback] = useState(null);
     const [selectedOption, setSelectedOption] = useState(null);
+    const [timer, setTimer] = useState(0);
+    const [score, setScore] = useState({ correct: 0, total: 0 });
 
     const fetchQuestion = async () => {
         setLoading(true);
         setFeedback(null);
         setSelectedOption(null);
+        setTimer(0);
         try {
             const res = await getNextQuestion(1);
             setQuestion(res.data);
@@ -30,22 +43,35 @@ export default function Quiz() {
         fetchQuestion();
     }, []);
 
+    useEffect(() => {
+        if (!loading && !feedback && question) {
+            const interval = setInterval(() => {
+                setTimer(prev => prev + 1);
+            }, 1000);
+            return () => clearInterval(interval);
+        }
+    }, [loading, feedback, question]);
+
     const handleOptionSelect = (opt) => {
-        if (feedback) return; // Prevent changing after submit
+        if (feedback) return;
         setSelectedOption(opt);
     };
 
     const handleSubmit = async () => {
         if (!selectedOption) return;
 
-        setLoading(true); // Short loading state for submission
+        setLoading(true);
         try {
             const res = await submitAnswer(1, {
                 question_id: question.id,
                 selected_answer: selectedOption,
-                time_taken: 10.0 // Mock time
+                time_taken: timer
             });
             setFeedback(res.data);
+            setScore(prev => ({
+                correct: prev.correct + (res.data.correct ? 1 : 0),
+                total: prev.total + 1
+            }));
         } catch (err) {
             console.error(err);
         } finally {
@@ -53,99 +79,214 @@ export default function Quiz() {
         }
     };
 
+    if (loading && !question) {
+        return <PageLoader message="AI is generating your next challenge..." />;
+    }
+
     return (
         <div className="min-h-screen bg-background">
             <Navbar />
-            <div className="max-w-3xl mx-auto p-6">
-                <div className="mb-8 flex justify-between items-center">
-                    <h1 className="text-2xl font-bold">Adaptive Quiz Mode</h1>
+            <div className="max-w-4xl mx-auto p-6">
+                {/* Header with Stats */}
+                <motion.div 
+                    initial={{ opacity: 0, y: -20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mb-8"
+                >
+                    <div className="glass-card p-6 rounded-2xl border mb-6">
+                        <div className="flex items-center justify-between flex-wrap gap-4">
+                            <div>
+                                <h1 className="text-3xl font-bold mb-2">
+                                    <span className="gradient-text">Adaptive Quiz Mode</span>
+                                </h1>
+                                <p className="text-muted-foreground">
+                                    Questions adapt to your skill level in real-time
+                                </p>
+                            </div>
+                            <div className="flex items-center gap-6">
+                                <div className="text-center">
+                                    <div className="text-2xl font-bold text-success">
+                                        {score.correct}/{score.total}
+                                    </div>
+                                    <div className="text-xs text-muted-foreground uppercase tracking-wide">
+                                        Correct
+                                    </div>
+                                </div>
+                                {!feedback && (
+                                    <div className="flex items-center gap-2 px-4 py-2 rounded-lg glass-card">
+                                        <Clock className="h-4 w-4 text-primary" />
+                                        <span className="font-mono text-lg">{timer}s</span>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
                     {question && (
-                        <span className={`px-3 py-1 rounded-full text-xs font-bold ${question.difficulty > 0.7 ? 'bg-red-500/20 text-red-500' :
-                                question.difficulty < 0.3 ? 'bg-green-500/20 text-green-500' : 'bg-yellow-500/20 text-yellow-500'
-                            }`}>
-                            Difficulty: {(question.difficulty * 100).toFixed(0)}%
-                        </span>
+                        <motion.div 
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            className="flex items-center gap-3 flex-wrap"
+                        >
+                            <DifficultyBadge difficulty={question.difficulty} />
+                            <div className="flex items-center gap-2 px-3 py-1 rounded-full glass-card border text-sm">
+                                <Zap className="h-4 w-4 text-primary" />
+                                <span className="text-muted-foreground">AI Adaptive</span>
+                            </div>
+                        </motion.div>
                     )}
-                </div>
+                </motion.div>
 
                 <AnimatePresence mode="wait">
-                    {loading && !feedback && !question ? (
-                        <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            className="flex h-64 items-center justify-center"
-                        >
-                            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                            <span className="ml-2">AI is generating your next challenge...</span>
-                        </motion.div>
-                    ) : question ? (
+                    {question ? (
                         <motion.div
                             key={question.id}
-                            initial={{ x: 20, opacity: 0 }}
+                            initial={{ x: 30, opacity: 0 }}
                             animate={{ x: 0, opacity: 1 }}
-                            exit={{ x: -20, opacity: 0 }}
-                            transition={{ duration: 0.3 }}
+                            exit={{ x: -30, opacity: 0 }}
+                            transition={{ duration: 0.4, type: "spring" }}
                         >
-                            <Card className="border-primary/20 bg-card/60 backdrop-blur-3xl shadow-2xl">
-                                <CardContent className="p-8 space-y-6">
-                                    <div className="text-sm text-muted-foreground uppercase tracking-wider">{question.topic}</div>
-                                    <h2 className="text-2xl font-semibold">{question.content}</h2>
+                            <Card className="glass-card border-primary/30 shadow-glow">
+                                <CardContent className="p-8 space-y-8">
+                                    {/* Topic Badge */}
+                                    <div className="flex items-center gap-2">
+                                        <Brain className="h-5 w-5 text-primary" />
+                                        <span className="text-sm font-semibold text-primary uppercase tracking-wider">
+                                            {question.topic}
+                                        </span>
+                                    </div>
 
-                                    <div className="grid gap-3 pt-4">
+                                    {/* Question */}
+                                    <h2 className="text-3xl font-bold text-foreground leading-relaxed">
+                                        {question.content}
+                                    </h2>
+
+                                    {/* Options */}
+                                    <div className="grid gap-4 pt-4">
                                         {question.options.map((opt, i) => {
-                                            let btnClass = "justify-start h-auto py-4 text-left text-lg ";
+                                            let btnClass = "justify-start h-auto py-5 px-6 text-left text-lg font-medium transition-all duration-200 ";
+                                            let icon = null;
+
                                             if (feedback) {
-                                                if (opt === feedback.correct_answer) btnClass += "bg-green-500/20 hover:bg-green-500/30 border-green-500 text-green-100 ";
-                                                else if (opt === selectedOption && !feedback.correct) btnClass += "bg-red-500/20 border-red-500 text-red-100 ";
+                                                if (opt === feedback.correct_answer) {
+                                                    btnClass += "bg-success/20 hover:bg-success/30 border-success text-success shadow-glow ";
+                                                    icon = <CheckCircle className="h-5 w-5" />;
+                                                } else if (opt === selectedOption && !feedback.correct) {
+                                                    btnClass += "bg-error/20 border-error text-error ";
+                                                    icon = <XCircle className="h-5 w-5" />;
+                                                } else {
+                                                    btnClass += "opacity-50 ";
+                                                }
                                             } else {
-                                                if (selectedOption === opt) btnClass += "border-primary bg-primary/10 ring-2 ring-primary ring-offset-2 ring-offset-background ";
-                                                else btnClass += "hover:bg-accent ";
+                                                if (selectedOption === opt) {
+                                                    btnClass += "border-primary bg-primary/20 ring-2 ring-primary shadow-glow ";
+                                                } else {
+                                                    btnClass += "hover:bg-white/5 hover:border-primary/50 ";
+                                                }
                                             }
 
                                             return (
-                                                <Button
+                                                <motion.div
                                                     key={i}
-                                                    variant="outline"
-                                                    className={btnClass}
-                                                    onClick={() => handleOptionSelect(opt)}
-                                                    disabled={!!feedback}
+                                                    initial={{ opacity: 0, x: -20 }}
+                                                    animate={{ opacity: 1, x: 0 }}
+                                                    transition={{ delay: i * 0.1 }}
+                                                    whileHover={!feedback ? { scale: 1.02, x: 5 } : {}}
                                                 >
-                                                    <span className="mr-3 font-mono opacity-50">{String.fromCharCode(65 + i)}.</span>
-                                                    {opt}
-                                                </Button>
+                                                    <Button
+                                                        variant="outline"
+                                                        className={btnClass}
+                                                        onClick={() => handleOptionSelect(opt)}
+                                                        disabled={!!feedback}
+                                                    >
+                                                        <span className="flex items-center gap-4 flex-1">
+                                                            <span className="flex items-center justify-center w-8 h-8 rounded-full bg-white/10 font-mono text-sm">
+                                                                {String.fromCharCode(65 + i)}
+                                                            </span>
+                                                            <span className="flex-1">{opt}</span>
+                                                            {icon}
+                                                        </span>
+                                                    </Button>
+                                                </motion.div>
                                             );
                                         })}
                                     </div>
                                 </CardContent>
                             </Card>
 
-                            {/* Feedback & Next */}
+                            {/* Feedback Section */}
                             {feedback && (
                                 <motion.div
                                     initial={{ opacity: 0, y: 20 }}
                                     animate={{ opacity: 1, y: 0 }}
-                                    className="mt-6 p-4 rounded-lg bg-card border"
+                                    className={`mt-6 p-6 rounded-2xl glass-card border-2 ${
+                                        feedback.correct ? 'border-success/50 bg-success/5' : 'border-error/50 bg-error/5'
+                                    }`}
                                 >
-                                    <div className="flex items-center justify-between">
-                                        <div>
-                                            <h3 className={`font-bold text-lg ${feedback.correct ? "text-green-500" : "text-red-500"}`}>
-                                                {feedback.correct ? "Excellent!" : "Not quite."}
-                                            </h3>
-                                            <p className="text-muted-foreground">{feedback.feedback}</p>
-                                            <p className="text-xs mt-1 text-blue-400">New Topic Strength: {(feedback.new_topic_strength * 100).toFixed(0)}%</p>
+                                    <div className="flex items-start justify-between gap-6">
+                                        <div className="flex-1">
+                                            <div className="flex items-center gap-3 mb-3">
+                                                {feedback.correct ? (
+                                                    <CheckCircle className="h-8 w-8 text-success" />
+                                                ) : (
+                                                    <XCircle className="h-8 w-8 text-error" />
+                                                )}
+                                                <h3 className={`text-2xl font-bold ${
+                                                    feedback.correct ? "text-success" : "text-error"
+                                                }`}>
+                                                    {feedback.correct ? "Excellent Work!" : "Not Quite Right"}
+                                                </h3>
+                                            </div>
+                                            <p className="text-foreground/80 mb-4 text-lg">
+                                                {feedback.feedback}
+                                            </p>
+                                            <div className="flex items-center gap-2 text-sm">
+                                                <TrendingUp className="h-4 w-4 text-primary" />
+                                                <span className="text-muted-foreground">
+                                                    Updated {question.topic} strength: 
+                                                </span>
+                                                <span className="font-bold text-primary">
+                                                    {(feedback.new_topic_strength * 100).toFixed(0)}%
+                                                </span>
+                                            </div>
                                         </div>
-                                        <Button onClick={fetchQuestion} size="lg">Next Challenge arrow_right</Button>
+                                        <Button 
+                                            onClick={fetchQuestion} 
+                                            size="lg"
+                                            className="bg-gradient-to-r from-primary to-accent hover:shadow-glow"
+                                        >
+                                            Next Challenge
+                                            <ArrowRight className="ml-2 h-5 w-5" />
+                                        </Button>
                                     </div>
                                 </motion.div>
                             )}
 
+                            {/* Submit Button */}
                             {!feedback && (
-                                <div className="mt-6 flex justify-end">
-                                    <Button onClick={handleSubmit} size="lg" disabled={!selectedOption || loading}>
-                                        {loading ? <Loader2 className="animate-spin" /> : "Submit Answer"}
+                                <motion.div 
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    className="mt-6 flex justify-end"
+                                >
+                                    <Button 
+                                        onClick={handleSubmit} 
+                                        size="lg"
+                                        disabled={!selectedOption || loading}
+                                        className={`bg-gradient-to-r from-primary to-accent hover:shadow-glow transition-all ${
+                                            selectedOption ? 'glow' : ''
+                                        }`}
+                                    >
+                                        {loading ? (
+                                            <LoadingSpinner size="sm" message="" />
+                                        ) : (
+                                            <>
+                                                Submit Answer
+                                                <ArrowRight className="ml-2 h-5 w-5" />
+                                            </>
+                                        )}
                                     </Button>
-                                </div>
+                                </motion.div>
                             )}
                         </motion.div>
                     ) : null}

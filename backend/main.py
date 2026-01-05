@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
+from datetime import datetime
 from pydantic import BaseModel
 from typing import List, Optional
 import database
@@ -96,6 +97,29 @@ def submit_answer(submission: AnswerSubmission, user_id: int = 1, db: Session = 
     
     is_correct = (submission.selected_answer == q.correct_answer)
     
+    # --- Start: Log Attempt for "No Repeat" Logic ---
+    # Create a quiz attempt record
+    attempt = models.QuizAttempt(
+        user_id=user_id,
+        score=1.0 if is_correct else 0.0,
+        timestamp=datetime.utcnow()
+    )
+    db.add(attempt)
+    db.flush() # Get ID
+    
+    # Log the specific question details
+    log = models.QuestionLog(
+        attempt_id=attempt.id,
+        question_id=q.id,
+        selected_answer=submission.selected_answer,
+        is_correct=is_correct,
+        time_taken=submission.time_taken,
+        difficulty_at_time=q.difficulty
+    )
+    db.add(log)
+    db.commit()
+    # --- End: Log Attempt ---
+
     # Update Knowledge Graph
     kg = KnowledgeGraphEngine(db)
     new_strength = kg.update_topic_strength(user_id, q.topic, is_correct, q.difficulty)

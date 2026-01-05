@@ -1,45 +1,146 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
-    :root {
-        --background: 224 71% 4%;
-        --foreground: 213 31% 91%;
-
-        --card: 224 71% 4%;
-        --card-foreground: 213 31% 91%;
-
-        --popover: 224 71% 4%;
-        --popover-foreground: 215 20.2% 65.1%;
-
-        --primary: 210 40% 98%;
-        --primary-foreground: 222.2 47.4% 11.2%;
-
-        --secondary: 217.2 32.6% 17.5%;
-        --secondary-foreground: 210 40% 98%;
-
-        --muted: 217.2 32.6% 17.5%;
-        --muted-foreground: 215 20.2% 65.1%;
-
-        --accent: 217.2 32.6% 17.5%;
-        --accent-foreground: 210 40% 98%;
-
-        --destructive: 0 62.8% 30.6%;
-        --destructive-foreground: 210 40% 98%;
-
-        --border: 217.2 32.6% 17.5%;
-        --input: 217.2 32.6% 17.5%;
-        --ring: 212.7 26.8% 83.9%;
-    }
-}
-
-@layer base {
     * {
-        border-color: hsl(var(--border));
+        @apply border-border;
     }
 
     body {
-        @apply bg-background text-foreground;
+        @apply bg-background text-foreground font-sans antialiased;
+        background: linear-gradient(135deg, #0A0E1A 0%, #111827 50%, #0F172A 100%);
+        background-attachment: fixed;
     }
+    
+    /* Smooth scrolling */
+    html {
+        scroll-behavior: smooth;
+    }
+}
+
+@layer components {
+    /* Glassmorphism Card */
+    .glass-card {
+        @apply backdrop-blur-xl bg-white/5 border border-white/10 shadow-glass;
+    }
+    
+    /* Gradient Text */
+    .gradient-text {
+        @apply bg-clip-text text-transparent bg-gradient-to-r from-primary via-accent to-secondary;
+    }
+    
+    /* Glow Effect */
+    .glow {
+        @apply shadow-glow transition-shadow duration-300;
+    }
+    
+    .glow:hover {
+        @apply shadow-glow-lg;
+    }
+    
+    /* Animated Border */
+    .animated-border {
+        @apply relative overflow-hidden;
+    }
+    
+    .animated-border::before {
+        content: '';
+        @apply absolute inset-0 bg-gradient-to-r from-primary via-accent to-secondary opacity-20 blur-xl;
+        animation: rotate 4s linear infinite;
+    }
+    
+    @keyframes rotate {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    
+    /* Progress Bar */
+    .progress-bar {
+        @apply relative h-2 bg-muted rounded-full overflow-hidden;
+    }
+    
+    .progress-fill {
+        @apply absolute inset-y-0 left-0 bg-gradient-to-r from-primary to-accent rounded-full transition-all duration-500;
+    }
+    
+    /* Shimmer Loading */
+    .shimmer {
+        @apply relative overflow-hidden;
+        background: linear-gradient(90deg, 
+            rgba(255, 255, 255, 0.05) 0%, 
+            rgba(255, 255, 255, 0.1) 50%, 
+            rgba(255, 255, 255, 0.05) 100%);
+        background-size: 200% 100%;
+        animation: shimmer 2s infinite;
+    }
+    
+    @keyframes shimmer {
+        0% { background-position: -200% 0; }
+        100% { background-position: 200% 0; }
+    }
+    
+    /* Floating Animation */
+    .float-animation {
+        animation: float 6s ease-in-out infinite;
+    }
+    
+    /* Stat Card Hover Effect */
+    .stat-card {
+        @apply transform transition-all duration-300 hover:scale-105 hover:shadow-glow;
+    }
+}
+
+@layer utilities {
+    /* Text Utilities */
+    .text-shadow {
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+    
+    .text-glow {
+        text-shadow: 0 0 20px rgba(45, 104, 196, 0.8);
+    }
+    
+    /* Hide scrollbar */
+    .no-scrollbar::-webkit-scrollbar {
+        display: none;
+    }
+    
+    .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+    
+    /* Custom Scrollbar */
+    .custom-scrollbar::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+    
+    .custom-scrollbar::-webkit-scrollbar-track {
+        @apply bg-muted/20 rounded-full;
+    }
+    
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+        @apply bg-primary/50 rounded-full hover:bg-primary/70;
+    }
+}
+
+/* Input Focus Styles */
+input:focus,
+textarea:focus {
+    @apply outline-none ring-2 ring-primary ring-offset-2 ring-offset-background;
+}
+
+/* Button Loading State */
+button:disabled {
+    @apply opacity-50 cursor-not-allowed;
+}
+
+/* Selection */
+::selection {
+    @apply bg-primary/30 text-white;
 }
