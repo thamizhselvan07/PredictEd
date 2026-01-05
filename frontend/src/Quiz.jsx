@@ -83,13 +83,21 @@ export default function Quiz() {
     }, []);
 
     useEffect(() => {
-        if (!loading && !feedback && question) {
+        if (!loading && !feedback && question && !noQuestions) {
             const interval = setInterval(() => {
-                setTimer(prev => prev + 1);
+                setTimer(prev => {
+                    const newTime = prev + 1;
+                    if (newTime >= 3600) { // 60 Minutes Limit
+                        clearInterval(interval);
+                        setNoQuestions(true); // End Quiz
+                        alert("Time is Up! Quiz Submitted.");
+                    }
+                    return newTime;
+                });
             }, 1000);
             return () => clearInterval(interval);
         }
-    }, [loading, feedback, question]);
+    }, [loading, feedback, question, noQuestions]);
 
     const handleOptionSelect = (opt) => {
         if (feedback) return;
@@ -142,7 +150,7 @@ export default function Quiz() {
                                     <span className="gradient-text">Adaptive Quiz Mode</span>
                                 </h1>
                                 <p className="text-muted-foreground">
-                                    Questions adapt to your skill level in real-time
+                                    {question ? `Question ${question.question_number} of ${question.total_questions}` : "Preparing..."}
                                 </p>
                             </div>
                             <div className="flex items-center gap-6">
@@ -151,15 +159,18 @@ export default function Quiz() {
                                         {score.correct}/{score.total}
                                     </div>
                                     <div className="text-xs text-muted-foreground uppercase tracking-wide">
-                                        Correct
+                                        Score
                                     </div>
                                 </div>
-                                {!feedback && !noQuestions && !error && (
-                                    <div className="flex items-center gap-2 px-4 py-2 rounded-lg glass-card">
-                                        <Clock className="h-4 w-4 text-primary" />
-                                        <span className="font-mono text-lg">{timer}s</span>
-                                    </div>
-                                )}
+
+                                {/* Global Timer (60 mins limit) */}
+                                <div className="flex items-center gap-2 px-4 py-2 rounded-lg glass-card border border-primary/20">
+                                    <Clock className="h-5 w-5 text-primary animate-pulse" />
+                                    <span className="font-mono text-xl font-bold">
+                                        {Math.floor((3600 - timer) / 60)}:
+                                        {String((3600 - timer) % 60).padStart(2, '0')}
+                                    </span>
+                                </div>
                             </div>
                         </div>
                     </div>

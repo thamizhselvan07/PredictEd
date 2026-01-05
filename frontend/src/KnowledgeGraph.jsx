@@ -1,222 +1,390 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import Navbar from './components/Navbar';
 import { getDashboardStats } from './api';
-import { motion } from 'framer-motion';
-import { Brain, Zap, Target, TrendingUp } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Brain, Zap, Activity, BarChart3, PieChart as PieIcon, TrendingUp, Layers, Target } from 'lucide-react';
 import { PageLoader } from './components/LoadingSpinner';
+import {
+    BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Cell,
+    PieChart, Pie, Legend, LineChart, Line
+} from 'recharts';
 
 export default function KnowledgeGraph() {
     const [nodes, setNodes] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [hoveredNode, setHoveredNode] = useState(null);
 
     useEffect(() => {
-        getDashboardStats(1)
+        getDashboardStats(1) // Assuming user_id=1
             .then(res => {
-                setNodes(res.data.knowledge_graph);
+                setNodes(res.data.knowledge_graph || []);
                 setLoading(false);
             })
-            .catch(() => setLoading(false));
+            .catch(() => {
+                setNodes([]);
+                setLoading(false);
+            });
     }, []);
 
-    if (loading) {
-        return <PageLoader message="Building your Knowledge Graph..." />;
-    }
+    // --- Structured Layout Calculation ---
+    const layout = useMemo(() => {
+        if (!nodes.length) return { center: { x: 50, y: 50 }, subjects: [], links: [] };
 
-    // Calculate node positions in a circular layout
-    const getNodePosition = (index, total) => {
-        const angle = (index / total) * 2 * Math.PI - Math.PI / 2;
-        const radius = 35; // percentage
-        const centerX = 50;
-        const centerY = 50;
+        // 1. Group by Subject
+        const subjects = {};
+        nodes.forEach(node => {
+            if (!subjects[node.subject]) subjects[node.subject] = [];
+            subjects[node.subject].push(node);
+        });
 
-        return {
-            left: `${centerX + radius * Math.cos(angle)}%`,
-            top: `${centerY + radius * Math.sin(angle)}%`,
-        };
+        const subjectKeys = Object.keys(subjects);
+        const totalSubjects = subjectKeys.length;
+        const centerX = 50; // Percentage
+        const centerY = 50; // Percentage
+
+        // Radii
+        const subjectRadius = 25; // Distance from center to subject hub
+        const topicRadius = 15;   // Distance from subject hub to topic node
+
+        const processedSubjects = [];
+        const processedLinks = [];
+
+        subjectKeys.forEach((subject, i) => {
+            // Calculate Subject Hub Position
+            const angle = (i / totalSubjects) * 2 * Math.PI - Math.PI / 2;
+            const sx = centerX + subjectRadius * Math.cos(angle);
+            const sy = centerY + subjectRadius * Math.sin(angle);
+
+            // Link Center -> Subject
+            processedLinks.push({
+                id: `link-center-${subject}`,
+                x1: centerX, y1: centerY,
+                x2: sx, y2: sy,
+                type: 'primary'
+            });
+
+            // Process Topics for this Subject
+            const topics = subjects[subject];
+            const processedTopics = topics.map((topic, j) => {
+                // Fan topics outwards from the subject hub
+                // Fan angle spread needs to be limited to avoid overlap with neighbor subjects
+                const spreadAngle = Math.PI / 2; // 90 degrees total spread per subject
+                const startAngle = angle - spreadAngle / 2;
+                const fanStep = topics.length > 1 ? spreadAngle / (topics.length - 1) : 0;
+
+                const topicAngle = topics.length === 1 ? angle : startAngle + (j * fanStep);
+
+                const tx = sx + topicRadius * Math.cos(topicAngle);
+                const ty = sy + topicRadius * Math.sin(topicAngle);
+
+                // Link Subject -> Topic
+                processedLinks.push({
+                    id: `link-${subject}-${topic.topic}`,
+                    x1: sx, y1: sy,
+                    x2: tx, y2: ty,
+                    type: 'secondary',
+                    subject: subject
+                });
+
+                return {
+                    ...topic,
+                    x: tx,
+                    y: ty,
+                    type: 'topic'
+                };
+            });
+
+            processedSubjects.push({
+                name: subject,
+                x: sx,
+                y: sy,
+                topics: processedTopics,
+                count: topics.length,
+                avgStrength: topics.reduce((acc, t) => acc + t.strength, 0) / topics.length
+            });
+        });
+
+        return { center: { x: centerX, y: centerY }, subjects: processedSubjects, links: processedLinks };
+    }, [nodes]);
+
+
+    // --- Analytics Data Check ---
+    const barData = useMemo(() => {
+        return nodes.map(node => ({
+            name: node.topic,
+            strength: Math.round(node.strength * 100),
+            raw: node.strength
+        })).sort((a, b) => b.strength - a.strength).slice(0, 10);
+    }, [nodes]);
+
+    const pieData = useMemo(() => {
+        const stats = { Strong: 0, Medium: 0, Weak: 0 };
+        nodes.forEach(n => {
+            if (n.strength >= 0.7) stats.Strong++;
+            else if (n.strength >= 0.4) stats.Medium++;
+            else stats.Weak++;
+        });
+        return [
+            { name: 'Strong', value: stats.Strong, color: '#10b981' },
+            { name: 'Medium', value: stats.Medium, color: '#f59e0b' },
+            { name: 'Weak', value: stats.Weak, color: '#ef4444' }
+        ].filter(d => d.value > 0);
+    }, [nodes]);
+
+    const lineData = useMemo(() => {
+        if (!nodes.length) return [];
+        const top = nodes.slice(0, 3);
+        const data = [];
+        for (let i = 0; i <= 5; i++) {
+            const p = { attempt: `Pt ${i}` };
+            top.forEach(t => {
+                const s = Math.round(t.strength * 100);
+                p[t.topic] = Math.min(100, Math.round(s * (0.2 + 0.8 * (i / 5)) + (Math.random() * 10 - 5)));
+            });
+            data.push(p);
+        }
+        return data;
+    }, [nodes]);
+
+    const CustomTooltip = ({ active, payload, label }) => {
+        if (active && payload && payload.length) {
+            return (
+                <div className="glass-card p-3 !bg-black/90 border border-white/10 rounded-lg shadow-xl text-xs">
+                    <p className="font-bold text-white mb-1">{label}</p>
+                    {payload.map((e, i) => (
+                        <p key={i} style={{ color: e.color || e.stroke || e.fill }}>
+                            {e.name}: {e.value}%
+                        </p>
+                    ))}
+                </div>
+            );
+        }
+        return null;
     };
 
+
+    if (loading) return <PageLoader message="Organizing Knowledge Structure..." />;
+
     return (
-        <div className="min-h-screen bg-background overflow-hidden">
+        <div className="min-h-screen bg-background pb-20 overflow-x-hidden text-foreground">
             <Navbar />
-            <div className="relative h-[calc(100vh-64px)] w-full p-8">
+
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-12">
+
                 {/* Header */}
-                <motion.div
-                    initial={{ opacity: 0, y: -20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="relative z-10 mb-8"
-                >
-                    <div className="glass-card px-6 py-4 rounded-2xl border inline-flex items-center gap-3">
-                        <Brain className="h-6 w-6 text-primary" />
-                        <div>
-                            <h1 className="text-2xl font-bold gradient-text">Knowledge Graph</h1>
-                            <p className="text-xs text-muted-foreground">Real-time topic mastery visualization</p>
+                <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+                    <div>
+                        <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary inline-flex items-center gap-2">
+                            <Layers className="h-8 w-8 text-primary" /> Mind Map
+                        </h1>
+                        <p className="text-muted-foreground mt-1">
+                            Structured visualization of your mastery across subjects.
+                        </p>
+                    </div>
+                </div>
+
+                {/* 1. VISUALIZATION CONTAINER */}
+                <section className="relative w-full aspect-square md:aspect-[16/9] max-h-[600px] glass-card rounded-3xl border border-primary/20 overflow-hidden shadow-2xl bg-black/40">
+
+                    {/* Overlay Stats */}
+                    <div className="absolute top-6 left-6 z-20 space-y-2 pointer-events-none">
+                        <div className="bg-black/60 backdrop-blur px-4 py-2 rounded-xl border border-white/10">
+                            <div className="text-xs text-muted-foreground uppercase tracking-wider">Total Topics</div>
+                            <div className="text-2xl font-bold text-white">{nodes.length}</div>
+                        </div>
+                        <div className="bg-black/60 backdrop-blur px-4 py-2 rounded-xl border border-white/10">
+                            <div className="text-xs text-muted-foreground uppercase tracking-wider">Subjects</div>
+                            <div className="text-xl font-bold text-primary">{layout.subjects.length}</div>
                         </div>
                     </div>
-                </motion.div>
 
-                {/* Graph Container */}
-                <div className="relative h-[calc(100%-100px)] w-full">
-                    <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="relative w-full max-w-5xl aspect-square">
-                            {/* Center Node */}
+                    {nodes.length === 0 ? (
+                        <div className="absolute inset-0 flex items-center justify-center flex-col">
+                            <Activity className="h-12 w-12 text-muted mb-4 opacity-50" />
+                            <p className="text-muted-foreground">Start taking quizzes to populate your map.</p>
+                        </div>
+                    ) : (
+                        <div className="relative w-full h-full">
+
+                            {/* SVG Lines */}
+                            <svg className="absolute inset-0 w-full h-full pointer-events-none">
+                                {layout.links.map(link => (
+                                    <motion.line
+                                        key={link.id}
+                                        initial={{ pathLength: 0, opacity: 0 }}
+                                        animate={{ pathLength: 1, opacity: link.type === 'primary' ? 0.3 : 0.15 }}
+                                        transition={{ duration: 1, delay: 0.5 }}
+                                        x1={`${link.x1}%`} y1={`${link.y1}%`}
+                                        x2={`${link.x2}%`} y2={`${link.y2}%`}
+                                        stroke={link.type === 'primary' ? '#00f0ff' : 'currentColor'}
+                                        strokeWidth={link.type === 'primary' ? 2 : 1}
+                                        className={link.type === 'primary' ? 'text-primary' : 'text-muted-foreground'}
+                                    />
+                                ))}
+                            </svg>
+
+                            {/* Center Node (Brain) */}
                             <motion.div
                                 initial={{ scale: 0 }}
                                 animate={{ scale: 1 }}
-                                transition={{ delay: 0.3, type: "spring" }}
-                                className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-20"
+                                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30"
                             >
-                                <div className="glass-card p-8 rounded-3xl border-2 border-primary/50 shadow-glow">
-                                    <Brain className="h-16 w-16 text-primary mx-auto mb-3 animate-float" />
-                                    <div className="text-center">
-                                        <div className="text-2xl font-bold">Your Brain</div>
-                                        <div className="text-sm text-muted-foreground">Learning Network</div>
-                                    </div>
+                                <div className="w-20 h-20 rounded-full glass-card border-2 border-primary shadow-[0_0_40px_rgba(0,240,255,0.3)] flex items-center justify-center bg-black/50 backdrop-blur-xl">
+                                    <Brain className="h-10 w-10 text-primary animate-pulse" />
+                                </div>
+                                <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 text-xs font-bold text-primary tracking-widest uppercase">
+                                    My Brain
                                 </div>
                             </motion.div>
 
-                            {/* Connection Lines */}
-                            <svg className="absolute inset-0 w-full h-full" style={{ zIndex: 1 }}>
-                                {nodes.map((_, i) => {
-                                    const pos = getNodePosition(i, nodes.length);
-                                    // Convert percentage to pixels for SVG
-                                    const x1 = "50%";
-                                    const y1 = "50%";
-                                    const x2 = pos.left;
-                                    const y2 = pos.top;
-
-                                    return (
-                                        <motion.line
-                                            key={i}
-                                            x1={x1}
-                                            y1={y1}
-                                            x2={x2}
-                                            y2={y2}
-                                            stroke="rgba(45, 104, 196, 0.3)"
-                                            strokeWidth="2"
-                                            initial={{ pathLength: 0 }}
-                                            animate={{ pathLength: 1 }}
-                                            transition={{ delay: i * 0.1, duration: 0.5 }}
-                                        />
-                                    );
-                                })}
-                            </svg>
+                            {/* Subject Hub Nodes */}
+                            {layout.subjects.map((subject, i) => (
+                                <motion.div
+                                    key={`subject-${subject.name}`}
+                                    initial={{ scale: 0, opacity: 0 }}
+                                    animate={{ scale: 1, opacity: 1 }}
+                                    transition={{ delay: 0.2 + (i * 0.1) }}
+                                    className="absolute -translate-x-1/2 -translate-y-1/2 z-20 group"
+                                    style={{ left: `${subject.x}%`, top: `${subject.y}%` }}
+                                >
+                                    <div className="w-12 h-12 rounded-full border border-white/20 bg-card/80 backdrop-blur shadow-xl flex items-center justify-center group-hover:scale-110 transition-transform cursor-pointer">
+                                        <Layers className="h-5 w-5 text-white" />
+                                    </div>
+                                    <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 text-[10px] font-bold text-foreground bg-black/50 px-2 py-0.5 rounded-full border border-white/5 whitespace-nowrap">
+                                        {subject.name}
+                                    </div>
+                                </motion.div>
+                            ))}
 
                             {/* Topic Nodes */}
-                            {nodes.map((node, i) => {
-                                // Group by Subject (Simple Cluster Logic)
-                                // Assign distinct angles for different subjects if possible, or just random
-                                const position = getNodePosition(i, nodes.length);
-                                const size = 60 + (node.strength * 80);
-                                const strengthPercent = Math.round(node.strength * 100);
-
-                                let colorClass = 'from-error/30 to-error/10 border-error/50 text-error';
-                                let icon = Target;
-
-                                if (node.strength >= 0.7) {
-                                    colorClass = 'from-success/30 to-success/10 border-success/50 text-success';
-                                    icon = TrendingUp;
-                                } else if (node.strength >= 0.4) {
-                                    colorClass = 'from-warning/30 to-warning/10 border-warning/50 text-warning';
-                                    icon = Zap;
-                                }
-
-                                const Icon = icon;
+                            {layout.subjects.flatMap(s => s.topics).map((topic, i) => {
+                                const color = topic.strength >= 0.7 ? 'bg-emerald-500' : topic.strength >= 0.4 ? 'bg-amber-500' : 'bg-red-500';
+                                const ringColor = topic.strength >= 0.7 ? 'border-emerald-500/30' : topic.strength >= 0.4 ? 'border-amber-500/30' : 'border-red-500/30';
 
                                 return (
                                     <motion.div
-                                        key={i}
+                                        key={`topic-${topic.topic}`}
                                         initial={{ scale: 0, opacity: 0 }}
                                         animate={{ scale: 1, opacity: 1 }}
-                                        transition={{
-                                            delay: 0.5 + i * 0.1,
-                                            type: "spring",
-                                            stiffness: 200
-                                        }}
-                                        whileHover={{ scale: 1.15, zIndex: 30 }}
-                                        className="absolute transform -translate-x-1/2 -translate-y-1/2 cursor-pointer"
-                                        style={{
-                                            ...position,
-                                            width: `${size}px`,
-                                            height: `${size}px`,
-                                            zIndex: 10,
-                                        }}
+                                        transition={{ delay: 0.8 + (i * 0.05) }}
+                                        className="absolute -translate-x-1/2 -translate-y-1/2 z-10"
+                                        style={{ left: `${topic.x}%`, top: `${topic.y}%` }}
+                                        onMouseEnter={() => setHoveredNode(topic)}
+                                        onMouseLeave={() => setHoveredNode(null)}
                                     >
                                         <div className={`
-                                            w-full h-full rounded-full
-                                            flex flex-col items-center justify-center
-                                            glass-card border-2 backdrop-blur-xl
-                                            bg-gradient-to-br ${colorClass}
-                                            shadow-glow transition-all duration-300
-                                            hover:shadow-glow-lg
-                                            relative
-                                        `}>
-                                            <Icon className="h-6 w-6 mb-1" />
-                                            <div className="text-center px-2">
-                                                <div className="text-[10px] uppercase font-bold tracking-wider opacity-70 mb-0.5">
-                                                    {node.subject}
-                                                </div>
-                                                <div className="font-bold text-sm leading-tight mb-1">
-                                                    {node.topic}
-                                                </div>
-                                                <div className="text-xs font-mono font-bold">
-                                                    {strengthPercent}%
-                                                </div>
-                                            </div>
-                                        </div>
+                                            w-4 h-4 rounded-full ${color} shadow-lg cursor-pointer
+                                            ring-4 ${ringColor} transition-all duration-300
+                                            hover:scale-150 hover:ring-2
+                                        `}></div>
+
+                                        {/* Hover Label */}
+                                        <AnimatePresence>
+                                            {hoveredNode?.topic === topic.topic && (
+                                                <motion.div
+                                                    initial={{ opacity: 0, y: 10, scale: 0.9 }}
+                                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                                    exit={{ opacity: 0, y: 5, scale: 0.9 }}
+                                                    className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 bg-black/90 border border-white/20 px-3 py-2 rounded-lg shadow-xl z-50 min-w-[120px]"
+                                                >
+                                                    <div className="text-xs font-bold text-white whitespace-nowrap">{topic.topic}</div>
+                                                    <div className="text-[10px] text-muted-foreground mt-0.5 flex justify-between items-center">
+                                                        <span>Mastery</span>
+                                                        <span className={
+                                                            topic.strength >= 0.7 ? 'text-emerald-400' :
+                                                                topic.strength >= 0.4 ? 'text-amber-400' : 'text-red-400'
+                                                        }>{Math.round(topic.strength * 100)}%</span>
+                                                    </div>
+                                                </motion.div>
+                                            )}
+                                        </AnimatePresence>
                                     </motion.div>
                                 );
                             })}
 
-                            {/* Empty State */}
-                            {nodes.length === 0 && (
-                                <motion.div
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    className="absolute inset-0 flex items-center justify-center"
-                                >
-                                    <div className="text-center glass-card p-12 rounded-3xl border">
-                                        <Brain className="h-20 w-20 text-muted-foreground/30 mx-auto mb-6" />
-                                        <h3 className="text-2xl font-bold mb-3">No Data Yet</h3>
-                                        <p className="text-muted-foreground mb-6">
-                                            Start taking quizzes to build your knowledge graph
-                                        </p>
-                                        <a
-                                            href="/quiz"
-                                            className="inline-flex px-6 py-3 bg-gradient-to-r from-primary to-accent rounded-lg font-semibold hover:shadow-glow transition-all"
-                                        >
-                                            Start Quiz Now
-                                        </a>
-                                    </div>
-                                </motion.div>
-                            )}
+                        </div>
+                    )}
+                </section>
+
+                {/* ANALYTICS SECTION (Preserved) */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 pt-8 border-t border-border/50">
+
+                    {/* Bar Chart */}
+                    <div className="glass-card p-6 rounded-2xl border border-white/5">
+                        <div className="flex items-center justify-between mb-6">
+                            <h3 className="text-lg font-bold flex items-center gap-2">
+                                <BarChart3 className="h-5 w-5 text-accent" /> Topic Leaders
+                            </h3>
+                        </div>
+                        <div className="h-[250px] w-full">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={barData} layout="vertical">
+                                    <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.1} horizontal={false} />
+                                    <XAxis type="number" hide />
+                                    <YAxis dataKey="name" type="category" width={100} tick={{ fontSize: 10, fill: '#888' }} stroke="transparent" />
+                                    <RechartsTooltip content={<CustomTooltip />} cursor={{ fill: 'transparent' }} />
+                                    <Bar dataKey="strength" radius={[0, 4, 4, 0]} barSize={15}>
+                                        {barData.map((e, i) => (
+                                            <Cell key={i} fill={e.raw >= 0.7 ? '#10b981' : e.raw >= 0.4 ? '#f59e0b' : '#ef4444'} />
+                                        ))}
+                                    </Bar>
+                                </BarChart>
+                            </ResponsiveContainer>
                         </div>
                     </div>
 
-                    {/* Legend */}
-                    {nodes.length > 0 && (
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 1 }}
-                            className="absolute bottom-8 right-8 glass-card p-4 rounded-xl border"
-                        >
-                            <div className="text-sm font-semibold mb-3">Mastery Levels</div>
-                            <div className="space-y-2 text-xs">
-                                <div className="flex items-center gap-2">
-                                    <div className="w-4 h-4 rounded-full bg-success/30 border border-success"></div>
-                                    <span>Expert (70%+)</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <div className="w-4 h-4 rounded-full bg-warning/30 border border-warning"></div>
-                                    <span>Intermediate (40-69%)</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <div className="w-4 h-4 rounded-full bg-error/30 border border-error"></div>
-                                    <span>Needs Work (&lt;40%)</span>
-                                </div>
+                    {/* Pie Chart */}
+                    <div className="glass-card p-6 rounded-2xl border border-white/5">
+                        <div className="flex items-center justify-between mb-6">
+                            <h3 className="text-lg font-bold flex items-center gap-2">
+                                <PieIcon className="h-5 w-5 text-accent" /> Mastery Split
+                            </h3>
+                        </div>
+                        <div className="h-[250px] w-full relative">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <PieChart>
+                                    <Pie
+                                        data={pieData}
+                                        innerRadius={60}
+                                        outerRadius={80}
+                                        paddingAngle={5}
+                                        dataKey="value"
+                                    >
+                                        {pieData.map((e, i) => <Cell key={i} fill={e.color} stroke="none" />)}
+                                    </Pie>
+                                    <RechartsTooltip content={<CustomTooltip />} />
+                                    <Legend verticalAlign="middle" align="right" layout="vertical" />
+                                </PieChart>
+                            </ResponsiveContainer>
+                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none -translate-x-[50px]">
+                                <span className="text-2xl font-bold">{nodes.length}</span>
                             </div>
-                        </motion.div>
-                    )}
+                        </div>
+                    </div>
+
+                    {/* Line Chart */}
+                    <div className="glass-card p-6 rounded-2xl border border-white/5 lg:col-span-2">
+                        <div className="flex items-center justify-between mb-6">
+                            <h3 className="text-lg font-bold flex items-center gap-2">
+                                <TrendingUp className="h-5 w-5 text-accent" /> Simulated Progression
+                            </h3>
+                        </div>
+                        <div className="h-[250px] w-full">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <LineChart data={lineData}>
+                                    <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.1} />
+                                    <XAxis dataKey="attempt" tick={{ fontSize: 10, fill: '#888' }} stroke="transparent" />
+                                    <YAxis domain={[0, 100]} tick={{ fontSize: 10, fill: '#888' }} stroke="transparent" />
+                                    <RechartsTooltip content={<CustomTooltip />} />
+                                    <Legend />
+                                    {Object.keys(lineData[0] || {}).filter(k => k !== 'attempt').map((k, i) => (
+                                        <Line key={k} type="monotone" dataKey={k} stroke={`hsl(${i * 90}, 70%, 50%)`} dot={false} strokeWidth={2} />
+                                    ))}
+                                </LineChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </div>
+
                 </div>
             </div>
         </div>

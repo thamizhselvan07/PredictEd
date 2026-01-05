@@ -126,3 +126,5 @@ class KnowledgeNode(Base):
     last_updated = Column(DateTime, default=datetime.utcnow)
 
     user = relationship("User", back_populates="knowledge_nodes")
+
+

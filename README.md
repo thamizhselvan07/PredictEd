@@ -1,238 +1,82 @@
-# 🧠 Adaptive Exam AI – Intelligent Competitive Exam Learning Platform
+# 🧠 PredictEd – Intelligent Competitive Exam Learning Platform
 
 <div align="center">
 
-![Adaptive Exam AI](https://img.shields.io/badge/AI-Powered-blue?style=for-the-badge&logo=openai)
-![React](https://img.shields.io/badge/React-18.2-61DAFB?style=for-the-badge&logo=react)
-![FastAPI](https://img.shields.io/badge/FastAPI-Latest-009688?style=for-the-badge&logo=fastapi)
-![Python](https://img.shields.io/badge/Python-3.12-3776AB?style=for-the-badge&logo=python)
+![PredictEd Logo](file:///C:/Users/yuvar/.gemini/antigravity/brain/af7c8acc-8b56-44c3-b0a8-1b4a8d8d1340/progress_here_logo_1767646912701.png)
 
-**A futuristic, AI-powered adaptive learning platform that evolves with every student interaction**
+![PredictEd](https://img.shields.io/badge/Status-Production_Ready-success?style=for-the-badge)
+![FastAPI](https://img.shields.io/badge/Backend-FastAPI-009688?style=for-the-badge&logo=fastapi)
+![React](https://img.shields.io/badge/Frontend-React_18-61DAFB?style=for-the-badge&logo=react)
 
-[Features](#-key-features) • [Demo](#-demo-flow) • [Setup](#-quick-setup) • [Architecture](#-system-architecture) • [Tech Stack](#-tech-stack)
+**The AI-Powered Adaptive Learning Platform that Evolves With You**
+
+[Features](#-key-features) • [Installation](#-installation) • [Usage](#-usage) • [Tech Stack](#-tech-stack)
 
 </div>
 
 ---
 
-## 🎯 Vision & Problem Statement
+## 🎯 Vision
 
-### The Problem
-Traditional competitive exam platforms are:
-- **Static**: Same questions for everyone regardless of skill level
-- **Score-based**: Only reactive feedback after completion
-- **One-size-fits-all**: No personalization or adaptation
-- **Passive**: Unable to predict future learning failures
+**PredictEd** transforms exam preparation from a passive activity into an intelligent, adaptive journey. By leveraging dynamic knowledge graphs and real-time difficulty adjustment, we ensure every student is always challenged just enough to grow, never enough to give up.
 
-### Our Solution
-**Adaptive Exam AI** is an intelligent learning platform that:
-- 📊 **Predicts** the next 3 topics you're most likely to fail
-- 🧠 **Adapts** question difficulty in real-time based on performance
-- 🎯 **Personalizes** learning paths using dynamic Knowledge Graphs
-- 🤖 **Assists** with an AI Tutor that detects conceptual confusion
-- 📈 **Improves** with every interaction using behavioral analysis
+---
+
+## 🚀 Installation & Usage
+
+**Prerequisites:** Node.js (v18+), Python (v3.10+)
+
+### 1. Setup Backend
+```bash
+cd backend
+pip install -r requirements.txt
+python seed_exams.py  # Seeds official exam hierarchy (JEE, NEET, etc.)
+python -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+```
+
+### 2. Setup Frontend (Development)
+```bash
+cd frontend
+npm install
+npm run dev
+# Access at http://localhost:5173
+```
+
+### 3. Production Build (Single Port Serving)
+To run the full application (Frontend + Backend) on a single port:
+
+```bash
+# 1. Build Frontend
+cd frontend
+npm run build
+
+# 2. Run Backend (which serves the built frontend)
+cd ../backend
+python -m uvicorn main:app --host 0.0.0.0 --port 8000
+```
+> **Access the App:** Open `http://localhost:8000`
 
 ---
 
 ## ✨ Key Features
-
 ### 1. 🎯 Dynamic Knowledge Graph
-- **Real-time topic mastery tracking** for each student
-- **Self-evolving strength scores** (0.0 to 1.0) per topic
-- Visual network representation of learning progress
-- Automatic topic relationship mapping
+- Visualizes topic mastery in real-time.
+- **Star Topology** with "Brain" node.
+- Interactive radial clustering of subjects.
 
-### 2. 🔮 Predictive Weak-Topic Engine
-- **AI-powered prediction** of failure probability
-- Identifies top 3 topics most likely to cause issues
-- Risk classification: CRITICAL, MODERATE, LOW
-- Proactive intervention recommendations
+### 2. 🧠 Adaptive Branding
+- **"Orbitron" Fonts** & Neon visuals.
+- Unique "Progress Here" Identity.
+- Day/Night Mode switcher.
 
-### 3. 🎲 Adaptive Question Generator
-- **Zone of Proximal Development** targeting
-- Difficulty adjusts based on current mastery level
-- Smart question selection algorithm
-- No question repetition tracking
+### 3. 📚 Official Exam Syllabi
+- **Comprehensive Data**: JEE, NEET, CLAT, UPSC, etc.
+- **Visual Roadmap**: Track progress per topic.
 
-### 4. 📊 Rich Analytics Dashboard
-- Performance trends visualization
-- Topic comparison radar charts
-- Mastery level indicators
-- Progress tracking over time
-
-### 5. 💬 AI Tutor Chat
-- Conceptual confusion detection
-- Context-aware responses
-- Micro-lesson recommendations
-- 24/7 availability
-
----
-
-## 🏗️ System Architecture
-
-### High-Level Overview
-```
-┌─────────────────────────────────────────────────────────────┐
-│                     FRONTEND (React)                         │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐   │
-│  │ Landing  │  │Dashboard │  │   Quiz   │  │   Chat   │   │
-│  └────┬─────┘  └────┬─────┘  └────┬─────┘  └────┬─────┘   │
-│       │             │              │              │          │
-│       └─────────────┴──────────────┴──────────────┘          │
-│                          │                                   │
-│                     REST API (Axios)                         │
-└─────────────────────────┬───────────────────────────────────┘
-                          │
-┌─────────────────────────┴───────────────────────────────────┐
-│                  BACKEND (FastAPI)                           │
-│  ┌──────────────────────────────────────────────────────┐   │
-│  │             API Endpoints Layer                       │   │
-│  │  /quiz/next  /quiz/submit  /dashboard  /chat         │   │
-│  └──────┬──────────────────────┬──────────────────┬─────┘   │
-│         │                      │                  │          │
-│  ┌──────┴───────┐      ┌──────┴───────┐   ┌─────┴──────┐   │
-│  │Knowledge Graph│      │  Predictor   │   │ Question   │   │
-│  │    Engine     │      │   Engine     │   │  Generator │   │
-│  └──────┬───────┘      └──────┬───────┘   └─────┬──────┘   │
-│         │                      │                  │          │
-│  ┌──────┴──────────────────────┴──────────────────┴──────┐  │
-│  │              SQLAlchemy ORM + SQLite                   │  │
-│  └────────────────────────────────────────────────────────┘  │
-└──────────────────────────────────────────────────────────────┘
-```
-
-### AI Logic Flow
-
-#### 1. Knowledge Graph Update Logic
-```python
-def update_topic_strength(user_id, topic, is_correct, difficulty):
-    """
-    Adaptive strength scoring with difficulty weighting
-    """
-    current_strength = get_current_strength(user_id, topic)
-    learning_rate = 0.1
-    
-    if is_correct:
-        # Boost: Higher gain if difficulty > current strength
-        gap = max(0, difficulty - current_strength)
-        new_strength = min(1.0, current_strength + learning_rate * (1 + gap))
-    else:
-        # Penalty: Higher penalty if failed easy question
-        gap = max(0, current_strength - difficulty)
-        new_strength = max(0.0, current_strength - learning_rate * (1 + gap))
-    
-    return new_strength
-```
-
-**Key Insights:**
-- Self-adjusting based on difficulty vs current mastery
-- Larger gains when conquering harder topics
-- Severe penalties for failing easy questions
-- Bounded between 0.0 and 1.0
-
-#### 2. Weak-Topic Prediction
-```python
-def predict_weak_areas(user_id, top_n=3):
-    """
-    Identifies topics with highest failure probability
-    """
-    nodes = get_knowledge_nodes(user_id)
-    sorted_nodes = sort_by_strength(nodes, ascending=True)
-    
-    weak_areas = []
-    for node in sorted_nodes[:top_n]:
-        risk_level = "CRITICAL" if node.strength < 0.3 else "MODERATE"
-        fail_probability = (1.0 - node.strength) * 0.9
-        
-        weak_areas.append({
-            "topic": node.topic,
-            "risk_level": risk_level,
-            "predicted_fail_probability": fail_probability,
-            "current_mastery": node.strength * 100
-        })
-    
-    return weak_areas
-```
-
-#### 3. Adaptive Question Selection
-```python
-def get_next_question(user_id):
-    """
-    Zone of Proximal Development targeting
-    """
-    # 70% exploration, 30% weak-area focus
-    if random() < 0.3 and has_weak_areas(user_id):
-        topic = select_weakest_topic(user_id)
-        target_difficulty = max(0.1, get_strength(user_id, topic))
-    else:
-        topic = select_random_unanswered_topic(user_id)
-        target_difficulty = get_strength(user_id, topic) or 0.3
-    
-    # Find question matching target ± 0.2
-    question = find_question(
-        topic=topic,
-        difficulty_range=(target_difficulty - 0.2, target_difficulty + 0.2),
-        exclude_answered=True
-    )
-    
-    return question
-```
-
----
-
-## 🚀 Quick Setup
-
-### Prerequisites
-- **Node.js** (v18+ recommended)
-- **Python** (v3.10+)
-- **npm** or **yarn**
-
-### Installation Steps
-
-#### 1. Clone & Navigate
-```bash
-git clone <your-repo-url>
-cd adaptive-exam-ai
-```
-
-#### 2. Backend Setup
-```bash
-cd backend
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Run server (http://localhost:8000)
-uvicorn main:app --reload
-```
-
-#### 3. Frontend Setup
-```bash
-cd ../frontend
-
-# Install dependencies
-npm install
-
-# Run development server (http://localhost:5173)
-npm run dev
-```
-
-#### 4. Build for Production
-```bash
-# In frontend directory
-npm run build
-
-# Backend will automatically serve the built frontend
-# Access at http://localhost:8000
-```
-
-### 🎮 Demo Flow
-
-1. **Landing Page** → Click "Start Learning Now"
-2. **Dashboard** → View your learning analytics and AI predictions
-3. **Adaptive Quiz** → Take questions that adapt to your level
-4. **Knowledge Graph** → Visualize your topic mastery network
-5. **AI Tutor** → Chat for conceptual help and guidance
+### 4. 🎮 Gamification
+- **XP System**, Levels, and Badges.
+- **Daily Streak** tracking.
+- **Leaderboards** to compete with peers.
 
 ---
 
@@ -405,8 +249,8 @@ Built with ❤️ by developers passionate about education technology and AI.
 
 <div align="center">
 
-**Made with 🧠 and ⚡ | Adaptive Exam AI**
+**Made with 🧠 and ⚡ | PredictEd**
 
-[⬆ Back to Top](#-adaptive-exam-ai--intelligent-competitive-exam-learning-platform)
+[⬆ Back to Top](#-predicted--intelligent-competitive-exam-learning-platform)
 
 </div>

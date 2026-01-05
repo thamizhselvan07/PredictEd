@@ -3,7 +3,7 @@ import Navbar from './components/Navbar';
 import { PageLoader } from './components/LoadingSpinner';
 import { getStreams } from './api';
 import { motion } from 'framer-motion';
-import { ArrowRight, Cpu, Stethoscope, Scale, Briefcase } from 'lucide-react';
+import { ArrowRight, Cpu, Stethoscope, Scale, Briefcase, BadgeDollarSign, PenTool, Shield } from 'lucide-react';
 import { Button } from './components/Button';
 import { useNavigate } from 'react-router-dom';
 
@@ -12,6 +12,9 @@ const iconMap = {
     "Stethoscope": Stethoscope,
     "Scale": Scale,
     "Briefcase": Briefcase,
+    "BadgeDollarSign": BadgeDollarSign,
+    "PenTool": PenTool,
+    "Shield": Shield,
     "default": Cpu
 };
 

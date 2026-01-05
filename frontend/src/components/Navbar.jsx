@@ -1,16 +1,20 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, BrainCircuit, MessageSquare, BookOpen, Trophy, Zap, Flame } from 'lucide-react';
+import { LayoutDashboard, BrainCircuit, MessageSquare, BookOpen, Trophy, Zap, Flame, FileText, Home } from 'lucide-react';
 import { useGamification } from '../contexts/GamificationContext';
+import ThemeToggle from './ThemeToggle';
+import Logo from '../assets/logo.png';
 
 export default function Navbar() {
     const location = useLocation();
     const { level, streak, progressToNextLevel } = useGamification();
 
     const navItems = [
-        { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-        { name: 'Adaptive Quiz', path: '/quiz', icon: BookOpen },
+        { name: 'Home', path: '/home', icon: Home },
+        { name: 'Streams', path: '/streams', icon: BookOpen },
+        { name: 'Syllabus', path: '/syllabus', icon: FileText },
         { name: 'Knowledge Graph', path: '/graph', icon: BrainCircuit },
+        { name: 'Progress', path: '/dashboard', icon: LayoutDashboard },
         { name: 'AI Tutor', path: '/chat', icon: MessageSquare },
     ];
 
@@ -18,8 +22,11 @@ export default function Navbar() {
         <nav className="border-b bg-card/50 backdrop-blur-md sticky top-0 z-50">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex h-16 items-center justify-between">
-                    <Link to="/" className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500">
-                        AdaptiveAI
+                    <Link to="/" className="flex items-center gap-2 group">
+                        <img src={Logo} alt="Progress Here" className="h-8 w-8 object-contain transition-transform group-hover:scale-110 mix-blend-screen" />
+                        <span className="text-xl font-bold font-brand bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent">
+                            PredictEd
+                        </span>
                     </Link>
                     <div className="flex items-center space-x-4">
                         <div className="hidden md:flex items-center gap-4 mr-4 bg-muted/30 px-4 py-1.5 rounded-full border border-white/5">
@@ -38,6 +45,8 @@ export default function Navbar() {
                                 <span className="font-bold text-sm text-orange-400">{streak}</span>
                             </div>
                         </div>
+
+                        <ThemeToggle />
 
                         {navItems.map((item) => {
                             const Icon = item.icon;

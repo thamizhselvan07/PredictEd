@@ -10,11 +10,16 @@ from knowledge_graph import KnowledgeGraphEngine
 from predictor import PredictorEngine
 from question_generator import QuestionGenerator
 from analytics import AnalyticsEngine
+from pydantic import EmailStr
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Init DB
 models.Base.metadata.create_all(bind=database.engine)
 
-app = FastAPI(title="Adaptive Exam AI")
+app = FastAPI(title="PredictEd")
 
 # CORS
 app.add_middleware(
@@ -48,15 +53,17 @@ class AnswerSubmission(BaseModel):
 
 class ChatRequest(BaseModel):
     message: str
+    stream: Optional[str] = "General"
+    exam: Optional[str] = "General"
+    subject: Optional[str] = "General"
+    topic: Optional[str] = None
+    recent_performance: Optional[str] = None
 
 class SignupRequest(BaseModel):
     username: str
-    password: str
-    email: str
-
-class VerifyRequest(BaseModel):
-    email: str
-    code: str
+    password: Optional[str] = None
+    email: EmailStr
+    # No signup_token needed as verification is handled by Firebase on frontend
 
 class LoginRequest(BaseModel):
     username: str
@@ -65,48 +72,29 @@ class LoginRequest(BaseModel):
 # --- Endpoints ---
 
 # --- Authentication ---
-import random
-import string
 
 @app.post("/api/auth/signup")
 def signup(req: SignupRequest, db: Session = Depends(get_db)):
+    """
+    Creates a user profile. 
+    Assumes the user is already verified via Firebase on the frontend.
+    """
     if db.query(models.User).filter(models.User.email == req.email).first():
         raise HTTPException(status_code=400, detail="Email already registered")
     
     if db.query(models.User).filter(models.User.username == req.username).first():
         raise HTTPException(status_code=400, detail="Username taken")
         
-    code = ''.join(random.choices(string.digits, k=6))
-    
     user = models.User(
         username=req.username,
         email=req.email,
-        hashed_password=req.password, # In production hash this!
-        verification_code=code,
-        is_verified=False
+        hashed_password=req.password, # In production, verify Firebase Token and don't store password if using pure Firebase Auth
+        is_verified=True # Trusted from Frontend Gate
     )
     db.add(user)
     db.commit()
     
-    # Simulate Email Sending
-    print(f"[{datetime.utcnow()}] VERIFICATION CODE for {req.email}: {code}")
-    
-    return {"message": "Signup successful. Check console for code."}
-
-@app.post("/api/auth/verify")
-def verify_email(req: VerifyRequest, db: Session = Depends(get_db)):
-    user = db.query(models.User).filter(models.User.email == req.email).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-        
-    if user.verification_code != req.code:
-        raise HTTPException(status_code=400, detail="Invalid code")
-        
-    user.is_verified = True
-    user.verification_code = None
-    db.commit()
-    
-    return {"message": "Verified successfully"}
+    return {"message": "Signup successful. You can now login."}
 
 @app.post("/api/auth/login")
 def login(req: LoginRequest, db: Session = Depends(get_db)):
@@ -118,7 +106,24 @@ def login(req: LoginRequest, db: Session = Depends(get_db)):
         raise HTTPException(status_code=401, detail="Invalid credentials")
         
     if not user.is_verified:
+        # Should not happen if signup enforces it, but safe check
         raise HTTPException(status_code=403, detail="Email not verified")
+        
+    return {
+        "user_id": user.id,
+        "username": user.username,
+        "email": user.email,
+        "token": "fake-jwt-token-for-demo"
+    }
+
+class GoogleLoginRequest(BaseModel):
+    email: EmailStr
+
+@app.post("/api/auth/google-login")
+def google_login(req: GoogleLoginRequest, db: Session = Depends(get_db)):
+    user = db.query(models.User).filter(models.User.email == req.email).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Account not found. Please Sign Up.")
         
     return {
         "user_id": user.id,
@@ -257,10 +262,6 @@ def get_next_question_for_attempt(
         # Simple Logic: Rotate subjects based on question index
         # e.g. 0-29 Subj 1, 30-59 Subj 2, etc. (assuming 30 q per sub)
         # OR just Randomly pick one
-        # Let's do: Random Subject for now to simulate "Mixed"
-        # Ideally we map index 0->Physics, 1->Physics... 
-        # But frontend doesn't strictly enforce index.
-        # Let's pick a random subject from the list
         import random
         selected_sub = random.choice(subjects)
         subject_id = selected_sub.id
@@ -273,6 +274,15 @@ def get_next_question_for_attempt(
              
     if not subject_id:
          raise HTTPException(status_code=400, detail="Corrupt attempt data (no subject)")
+
+    # Enforce 50 Questions Limit
+    questions_answered = db.query(models.QuestionLog).filter(models.QuestionLog.attempt_id == attempt_id).count()
+    if questions_answered >= 50:
+         # Mark attempt as completed if not already
+         if not attempt.completed:
+             attempt.completed = True
+             db.commit()
+         raise HTTPException(status_code=404, detail="Quiz Completed")
 
     gen = QuestionGenerator(db)
     q = gen.get_next_question(user_id, subject_id=subject_id)
@@ -291,7 +301,9 @@ def get_next_question_for_attempt(
         "options": q.options,
         "pyq_year": q.pyq_year,
         "attempt_id": attempt_id,
-        "subject_name": sub_name 
+        "subject_name": sub_name,
+        "question_number": questions_answered + 1,
+        "total_questions": 50
     }
 
 
@@ -358,6 +370,21 @@ def submit_answer(submission: AnswerSubmission, user_id: int = 1, db: Session = 
     db.commit()
     # --- End: Log Attempt ---
 
+    # --- End: Log Attempt ---
+
+    # Update Attempt Stats
+    attempt = db.query(models.QuizAttempt).filter(models.QuizAttempt.id == attempt.id).first()
+    attempt.total_time += submission.time_taken
+    
+    # Recalculate Score/Accuracy
+    logs = db.query(models.QuestionLog).filter(models.QuestionLog.attempt_id == attempt.id).all()
+    total_q = len(logs)
+    correct_q = sum(1 for l in logs if l.is_correct)
+    
+    attempt.score = correct_q # Raw score
+    attempt.accuracy = (correct_q / total_q) if total_q > 0 else 0.0
+    db.commit()
+
     # Update Knowledge Graph
     kg = KnowledgeGraphEngine(db)
     new_strength = kg.update_topic_strength(
@@ -367,10 +394,6 @@ def submit_answer(submission: AnswerSubmission, user_id: int = 1, db: Session = 
         q.difficulty,
         subject_id=q.subject_id
     )
-    
-    # Log (Simplify: create a transient attempt or just log directly? logging directly for demo speed)
-    # Ideally we group under a QuizAttempt, but for "endless mode" we just log.
-    # We will just return the result for now.
     
     feedback = "Correct! Well done." if is_correct else f"Incorrect. The right answer was {q.correct_answer}."
     
@@ -399,7 +422,6 @@ def get_dashboard_stats(user_id: int = 1, db: Session = Depends(get_db)):
 def reset_progress(user_id: int = 1, db: Session = Depends(get_db)):
     """Resets all progress for the user."""
     # Delete logs first (foreign key dependency)
-    # Ideally use cascade, but manual deletes are safer for logic understanding here
     
     # Get user attempts
     attempts = db.query(models.QuizAttempt).filter(models.QuizAttempt.user_id == user_id).all()
@@ -419,7 +441,6 @@ def reset_progress(user_id: int = 1, db: Session = Depends(get_db)):
 def chat_tutor(req: ChatRequest):
     """
     AI Tutor powered by Google Gemini.
-    Falls back to simulated response if no API key is set.
     """
     import os
     import google.generativeai as genai
@@ -428,51 +449,46 @@ def chat_tutor(req: ChatRequest):
     load_dotenv()
     
     api_key = os.getenv("GEMINI_API_KEY")
-    msg = req.message
     
-    if not api_key or api_key == "YOUR_GEMINI_API_KEY_HERE":
-        # Enhanced Simulation Mode (Demo)
-        keyword_responses = {
-            "react": "React is a JavaScript library for building user interfaces. It uses components and a virtual DOM for efficient updates.",
-            "python": "Python is a high-level, interpreted programming language known for its readability and vast ecosystem of libraries.",
-            "ai": "Artificial Intelligence involves creating systems that can perform tasks requiring human intelligence, such as learning and problem-solving.",
-            "sql": "SQL (Structured Query Language) is the standard language for managing and manipulating relational databases.",
-            "hook": "In React, Hooks allow you to use state and other React features without writing a class component (e.g., useState, useEffect).",
-            "list": "In Python, a list is a mutable, ordered sequence of elements. You can add items using `.append()`.",
-        }
+    if not api_key:
+        return {"reply": "Configuration Error: AI API Key is missing. Please check .env file."}
+
+    try:
+        genai.configure(api_key=api_key)
+        # Use a stable model
+        model = genai.GenerativeModel('gemini-2.0-flash')
         
-        msg_lower = msg.lower()
-        response = "I'm currently running in Demo Mode (No API Key). "
+        # Context Construction
+        context_str = f"""
+        You are an ADVANCED AI TUTOR for the 'Progress Here' platform.
         
-        found = False
-        for key, val in keyword_responses.items():
-            if key in msg_lower:
-               response += val
-               found = True
-               break
+        CONTEXT:
+        - Stream: {req.stream}
+        - Exam: {req.exam}
+        - Subject: {req.subject}
+        {f"- Topic: {req.topic}" if req.topic else ""}
+        {f"- Recent Performance: {req.recent_performance}" if req.recent_performance else ""}
         
-        if not found:
-            response += "That's a great question! Try asking about React, Python, AI, or SQL to see my knowledge base in action."
-            
-    else:
-        try:
-            genai.configure(api_key=api_key)
-            # Using specific available model from list_models()
-            model = genai.GenerativeModel('gemini-2.0-flash')
-            
-            # Context for the AI
-            context = """You are an expert AI Tutor for a competitive exam platform. 
-            Your goal is to help students understand concepts in React, Python, AI, SQL, and Data Structures.
-            Be encouraging, concise, and use the Socratic method when appropriate.
-            If the user is stuck, give a hint, not just the answer.
-            """
-            
-            chat = model.start_chat(history=[])
-            response_obj = chat.send_message(f"{context}\n\nUser Question: {msg}")
-            response = response_obj.text
-        except Exception as e:
-            print(f"Gemini API Error: {e}")
-            response = "I'm having trouble connecting to my brain right now. Please try again later."
+        INSTRUCTIONS:
+        - You are explaining concepts to a student preparing for competitive exams.
+        - Be accurate, exam-oriented, and easy to understand.
+        - Use step-by-step explanations, formulas, and examples where applicable.
+        - If the user asks a question, answer it directly.
+        - If the user asks for clarity, simplify your language.
+        - Stay strictly within the syllabus of the selected EXAM.
+        
+        User Question: {req.message}
+        """
+        
+        chat = model.start_chat(history=[])
+        response_obj = chat.send_message(context_str)
+        response = response_obj.text
+        
+    except Exception as e:
+        print(f"Gemini API Error: {e}")
+        response = "I'm having trouble connecting to the AI brain right now. Please try again in a moment."
+        if "429" in str(e):
+             response = "I'm receiving too many requests right now. Please wait a moment and try again."
 
     return {"reply": response}
 
@@ -480,24 +496,38 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 import os
 
-# Mount React Assets
+# --- Static File Serving (SPA) ---
+
 current_dir = os.path.dirname(os.path.abspath(__file__))
 frontend_dist = os.path.join(current_dir, "../frontend/dist")
 assets_path = os.path.join(frontend_dist, "assets")
 
-if os.path.exists(assets_path):
-    app.mount("/assets", StaticFiles(directory=assets_path), name="assets")
+# Ensure dist exists before mounting
+if os.path.exists(frontend_dist):
+    # Mount assets folder explicitly if it exists
+    if os.path.exists(assets_path):
+        app.mount("/assets", StaticFiles(directory=assets_path), name="assets")
 
-# Catch-all for SPA (must be last)
-@app.get("/{full_path:path}")
-async def serve_react_app(full_path: str):
-    # Pass through API calls (though they should be caught above if defined)
-    if full_path.startswith("api") or full_path.startswith("quiz") or full_path.startswith("dashboard") or full_path.startswith("chat"):
-        # If it matched here, it means it didn't match a specific API route
-         raise HTTPException(status_code=404, detail="Not Found")
-    
-    # Serve index.html for everything else
-    index_path = os.path.join(frontend_dist, "index.html")
-    if os.path.exists(index_path):
-        return FileResponse(index_path)
-    return {"error": "Frontend build not found. Please run 'npm run build' in frontend directory."}
+    # Catch-all for SPA
+    @app.get("/{full_path:path}")
+    async def serve_react_app(full_path: str):
+        # 1. API Guard: Don't serve HTML for missing API endpoints
+        if full_path.startswith(("api", "chat", "quiz", "streams", "exams", "subjects", "dashboard", "auth")):
+            raise HTTPException(status_code=404, detail="API Endpoint not found")
+        
+        # 2. Serve static files if they exist (e.g., favicon.ico, manifest.json)
+        file_path = os.path.join(frontend_dist, full_path)
+        if os.path.exists(file_path) and os.path.isfile(file_path):
+            return FileResponse(file_path)
+        
+        # 3. Fallback to index.html for React Router
+        index_path = os.path.join(frontend_dist, "index.html")
+        if os.path.exists(index_path):
+            return FileResponse(index_path)
+            
+        return {"error": "Frontend build index.html not found"}
+else:
+    print("Warning: Frontend build not found. Run 'npm run build' in frontend directory.")
+    @app.get("/")
+    def read_root():
+        return {"message": "Backend is running. Frontend build not found. Please run 'npm run build' in frontend directory."}

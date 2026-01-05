@@ -10,4 +10,17 @@ export default defineConfig({
             "@": path.resolve(__dirname, "./src"),
         },
     },
+    server: {
+        proxy: {
+            '/api': 'http://127.0.0.1:8000',
+            '/quiz': 'http://127.0.0.1:8000',
+            '/dashboard': 'http://127.0.0.1:8000',
+            '/streams': 'http://127.0.0.1:8000',
+            '/exams': 'http://127.0.0.1:8000',
+            '/subjects': 'http://127.0.0.1:8000',
+            '/quiz-types': 'http://127.0.0.1:8000',
+            '/exam': 'http://127.0.0.1:8000',
+            '/chat': 'http://127.0.0.1:8000',
+        }
+    }
 })

@@ -7,45 +7,45 @@ export default {
     theme: {
         extend: {
             colors: {
-                background: "#050505", // Deep charcoal / near-black
-                foreground: "#F3F4F6",
+                background: "rgb(var(--background) / <alpha-value>)",
+                foreground: "rgb(var(--foreground) / <alpha-value>)",
 
                 primary: {
-                    DEFAULT: "#00F0FF", // Electric Blue / Cyan
-                    foreground: "#000000",
+                    DEFAULT: "rgb(var(--primary) / <alpha-value>)",
+                    foreground: "rgb(var(--primary-foreground) / <alpha-value>)",
                     light: "#5CFFFF",
                     dark: "#00B8CC",
                 },
                 secondary: {
-                    DEFAULT: "#A855F7", // Violet / purple
-                    foreground: "#FFFFFF",
+                    DEFAULT: "rgb(var(--secondary) / <alpha-value>)",
+                    foreground: "rgb(var(--secondary-foreground) / <alpha-value>)",
                     light: "#C084FC",
                     dark: "#7E22CE",
                 },
                 accent: {
-                    DEFAULT: "#22D3EE", // Cyan accent
-                    foreground: "#000000",
+                    DEFAULT: "rgb(var(--accent) / <alpha-value>)",
+                    foreground: "rgb(var(--accent-foreground) / <alpha-value>)",
                     light: "#67E8F9",
                     dark: "#0891B2",
                 },
 
                 card: {
-                    DEFAULT: "rgba(20, 20, 20, 0.7)",
-                    foreground: "#E5E7EB",
+                    DEFAULT: "rgb(var(--card) / <alpha-value>)",
+                    foreground: "rgb(var(--card-foreground) / <alpha-value>)",
                 },
 
                 muted: {
-                    DEFAULT: "#18181B", // Zinc-900
-                    foreground: "#9CA3AF",
+                    DEFAULT: "rgb(var(--muted) / <alpha-value>)",
+                    foreground: "rgb(var(--muted-foreground) / <alpha-value>)",
                 },
 
-                border: "rgba(255, 255, 255, 0.1)",
-                input: "#18181B",
-                ring: "#00F0FF",
+                border: "rgb(var(--border) / <alpha-value>)",
+                input: "rgb(var(--input) / <alpha-value>)",
+                ring: "rgb(var(--ring) / <alpha-value>)",
 
-                success: "#34D399", // Soft Green
+                success: "#34D399",
                 warning: "#F59E0B",
-                error: "#F87171", // Soft Red
+                error: "#F87171",
                 info: "#38BDF8",
             },
 

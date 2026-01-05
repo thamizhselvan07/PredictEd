@@ -2,7 +2,8 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from './components/Button';
 import { motion } from 'framer-motion';
-import { Brain, Target, Zap, TrendingUp, Shield, Sparkles } from 'lucide-react';
+import { Brain, Target, Zap, TrendingUp, Shield, Sparkles, ArrowRight } from 'lucide-react';
+import Logo from './assets/logo.png';
 
 export default function Landing() {
     const features = [
@@ -53,17 +54,20 @@ export default function Landing() {
                             initial={{ scale: 0.8 }}
                             animate={{ scale: 1 }}
                             transition={{ duration: 0.5 }}
-                            className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-card border text-sm mb-4"
+                            className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-card border text-sm mb-4 font-brand"
                         >
-                            <Sparkles className="h-4 w-4 text-primary" />
+                            <img src={Logo} alt="Logo" className="w-6 h-6 object-contain" />
                             <span className="text-muted-foreground">Powered by Advanced AI</span>
                         </motion.div>
 
-                        <h1 className="text-7xl md:text-8xl font-black tracking-tighter">
-                            <span className="gradient-text text-glow">
-                                Adaptive Exam AI
-                            </span>
-                        </h1>
+                        <div className="flex flex-col items-center justify-center gap-6">
+                            <img src={Logo} alt="Progress Here Logo" className="w-32 h-32 object-contain drop-shadow-[0_0_30px_rgba(0,240,255,0.5)] animate-float" />
+                            <h1 className="text-7xl md:text-8xl font-black tracking-tighter">
+                                <span className="gradient-text text-glow font-brand">
+                                    PredictEd
+                                </span>
+                            </h1>
+                        </div>
 
                         <p className="text-xl md:text-2xl text-foreground/80 max-w-3xl mx-auto leading-relaxed">
                             The <span className="text-primary font-semibold">intelligent learning platform</span> that evolves with you.
@@ -73,8 +77,8 @@ export default function Landing() {
 
                         <div className="flex flex-wrap items-center justify-center gap-4 pt-4">
                             <Link to="/dashboard">
-                                <Button 
-                                    size="lg" 
+                                <Button
+                                    size="lg"
                                     className="text-lg px-10 py-7 bg-gradient-to-r from-primary to-accent hover:shadow-glow-lg transition-all duration-300 glow"
                                 >
                                     Start Learning Now
@@ -82,8 +86,8 @@ export default function Landing() {
                                 </Button>
                             </Link>
                             <Link to="/quiz">
-                                <Button 
-                                    size="lg" 
+                                <Button
+                                    size="lg"
                                     variant="outline"
                                     className="text-lg px-10 py-7 glass-card hover:bg-white/10 transition-all"
                                 >
@@ -158,8 +162,8 @@ export default function Landing() {
                             Join thousands of students who are learning smarter, not harder, with AI-powered adaptive technology.
                         </p>
                         <Link to="/dashboard">
-                            <Button 
-                                size="lg" 
+                            <Button
+                                size="lg"
                                 className="text-lg px-12 py-6 bg-gradient-to-r from-primary to-accent hover:shadow-glow-lg glow"
                             >
                                 Get Started Free

@@ -8,8 +8,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 export default function Chat() {
     const [messages, setMessages] = useState([
-        { 
-            role: 'bot', 
+        {
+            role: 'bot',
             content: "👋 Hello! I'm your AI Tutor powered by adaptive learning intelligence. I can help you understand concepts, answer questions, and provide personalized guidance. What would you like to learn today?"
         }
     ]);
@@ -38,7 +38,15 @@ export default function Chat() {
         setLoading(true);
 
         try {
-            const res = await chatWithTutor(messageText);
+            // Retrieve context from localStorage (set by other components)
+            const savedContext = JSON.parse(localStorage.getItem('edu_context') || '{}');
+
+            const res = await chatWithTutor(messageText, {
+                stream: savedContext.stream || "General",
+                exam: savedContext.exam || "General",
+                subject: savedContext.subject || "General",
+                topic: savedContext.topic || null
+            });
             setTimeout(() => {
                 setMessages([...newMsgs, { role: 'bot', content: res.data.reply }]);
                 setLoading(false);
@@ -106,11 +114,10 @@ export default function Chat() {
                                             <Bot size={20} className="text-white" />
                                         </div>
                                     )}
-                                    <div className={`max-w-[75%] rounded-2xl p-4 ${
-                                        m.role === 'user'
+                                    <div className={`max-w-[75%] rounded-2xl p-4 ${m.role === 'user'
                                             ? 'bg-gradient-to-br from-primary to-accent text-white shadow-glow rounded-tr-sm'
                                             : 'glass-card border rounded-tl-sm'
-                                    }`}>
+                                        }`}>
                                         <p className="leading-relaxed whitespace-pre-wrap">{m.content}</p>
                                     </div>
                                     {m.role === 'user' && (
@@ -121,7 +128,7 @@ export default function Chat() {
                                 </motion.div>
                             ))}
                         </AnimatePresence>
-                        
+
                         {loading && (
                             <motion.div
                                 initial={{ opacity: 0 }}
@@ -181,8 +188,8 @@ export default function Chat() {
                                 onKeyPress={handleKeyPress}
                                 disabled={loading}
                             />
-                            <Button 
-                                onClick={() => handleSend()} 
+                            <Button
+                                onClick={() => handleSend()}
                                 size="lg"
                                 disabled={!input.trim() || loading}
                                 className="px-6 bg-gradient-to-r from-primary to-accent hover:shadow-glow transition-all"

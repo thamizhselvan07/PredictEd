@@ -6,8 +6,9 @@ const api = axios.create({
 
 // Auth
 export const login = (data) => api.post('/api/auth/login', data);
+// export const signup = (data) => api.post('/api/auth/signup', data);
 export const signup = (data) => api.post('/api/auth/signup', data);
-export const verifyEmail = (data) => api.post('/api/auth/verify', data);
+export const googleLogin = (data) => api.post('/api/auth/google-login', data);
 
 export const getNextQuestion = (userId, quizId = null, subjectId = null) => {
     let url = `/quiz/next?user_id=${userId}`;
@@ -30,6 +31,6 @@ export const getAdaptiveQuestion = (subjectId, attemptId, userId) => api.get(`/q
 
 
 export const resetQuiz = (userId) => api.post(`/quiz/reset?user_id=${userId}`);
-export const chatWithTutor = (message) => api.post('/chat/tutor', { message });
+export const chatWithTutor = (message, context = {}) => api.post('/chat/tutor', { message, ...context });
 
 export default api;

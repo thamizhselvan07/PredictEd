@@ -1,18 +1,69 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
+    :root {
+        /* Default Dark Theme - RGB Channels */
+        --background: 5 5 5;
+        --foreground: 243 244 246;
+        --card: 20 20 20;
+        --card-foreground: 229 231 235;
+        --primary: 0 240 255;
+        --primary-foreground: 0 0 0;
+        --secondary: 168 85 247;
+        --secondary-foreground: 255 255 255;
+        --muted: 24 24 27;
+        --muted-foreground: 156 163 175;
+        --accent: 34 211 238;
+        --accent-foreground: 0 0 0;
+        --border: 255 255 255;
+        --input: 24 24 27;
+        --ring: 0 240 255;
+        --radius: 0.5rem;
+    }
+
+    .light {
+        /* Light Theme - RGB Channels */
+        --background: 255 255 255;
+        --foreground: 15 23 42;
+        --card: 255 255 255;
+        --card-foreground: 15 23 42;
+        --primary: 8 145 178;
+        --primary-foreground: 255 255 255;
+        --secondary: 147 51 234;
+        --secondary-foreground: 255 255 255;
+        --muted: 241 245 249;
+        --muted-foreground: 100 116 139;
+        --accent: 34 211 238;
+        --accent-foreground: 0 0 0;
+        --border: 226 232 240;
+        --input: 226 232 240;
+        --ring: 8 145 178;
+    }
+
     * {
         @apply border-border;
     }
 
     body {
         @apply bg-background text-foreground font-sans antialiased;
+        transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    /* Dark Mode Gradient */
+    :root:not(.light) body {
         background: radial-gradient(circle at top center, #1a1a1a 0%, #050505 100%);
+        background-attachment: fixed;
+    }
+
+    /* Light Mode Gradient */
+    .light body {
+        background: radial-gradient(circle at top center, #f8fafc 0%, #ffffff 100%);
         background-attachment: fixed;
     }
 
@@ -26,7 +77,16 @@
 
     /* Glassmorphism Card */
     .glass-card {
-        @apply backdrop-blur-xl bg-white/5 border border-white/10 shadow-glass;
+        @apply backdrop-blur-xl border shadow-glass;
+        background-color: rgb(var(--card) / 0.7);
+        border-color: rgb(var(--border) / 0.1);
+    }
+
+    /* Light Mode Glass Override */
+    .light .glass-card {
+        background-color: rgb(var(--card) / 0.7);
+        border-color: rgb(0 0 0 / 0.05);
+        box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
     }
 
     /* Gradient Text */
@@ -37,6 +97,11 @@
     /* Glow Effect */
     .glow {
         @apply shadow-glow transition-shadow duration-300;
+    }
+
+    .light .glow {
+        box-shadow: 0 0 15px rgb(8 145 178 / 0.2);
+        /* Softer glow in light mode */
     }
 
     .glow:hover {
@@ -77,11 +142,18 @@
     .shimmer {
         @apply relative overflow-hidden;
         background: linear-gradient(90deg,
-                rgba(255, 255, 255, 0.05) 0%,
-                rgba(255, 255, 255, 0.1) 50%,
-                rgba(255, 255, 255, 0.05) 100%);
+                rgb(255 255 255 / 0.05) 0%,
+                rgb(255 255 255 / 0.1) 50%,
+                rgb(255 255 255 / 0.05) 100%);
         background-size: 200% 100%;
         animation: shimmer 2s infinite;
+    }
+
+    .light .shimmer {
+        background: linear-gradient(90deg,
+                rgb(0 0 0 / 0.05) 0%,
+                rgb(0 0 0 / 0.1) 50%,
+                rgb(0 0 0 / 0.05) 100%);
     }
 
     @keyframes shimmer {
@@ -108,12 +180,25 @@
 @layer utilities {
 
     /* Text Utilities */
+    .font-brand {
+        font-family: 'Orbitron', sans-serif;
+    }
+
     .text-shadow {
-        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        text-shadow: 0 2px 4px rgb(0 0 0 / 0.3);
+    }
+
+    .light .text-shadow {
+        text-shadow: none;
+        /* Often cleaner in light mode */
     }
 
     .text-glow {
-        text-shadow: 0 0 20px rgba(0, 240, 255, 0.6);
+        text-shadow: 0 0 20px rgb(0 240 255 / 0.6);
+    }
+
+    .light .text-glow {
+        text-shadow: 0 0 10px rgb(8 145 178 / 0.4);
     }
 
     /* Hide scrollbar */
@@ -133,11 +218,11 @@
     }
 
     .custom-scrollbar::-webkit-scrollbar-track {
-        @apply bg-muted/20 rounded-full;
+        @apply bg-neutral-800 rounded-full;
     }
 
     .custom-scrollbar::-webkit-scrollbar-thumb {
-        @apply bg-primary/50 rounded-full hover:bg-primary/70;
+        @apply bg-cyan-500 rounded-full hover:bg-cyan-400;
     }
 }
 
@@ -153,6 +238,7 @@ button:disabled {
 }
 
 /* Selection */
+/* Selection */
 ::selection {
-    @apply bg-primary/30 text-white;
+    @apply bg-cyan-500/30 text-white;
 }
