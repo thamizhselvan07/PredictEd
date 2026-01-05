@@ -103,6 +103,8 @@ export default function KnowledgeGraph() {
 
                             {/* Topic Nodes */}
                             {nodes.map((node, i) => {
+                                // Group by Subject (Simple Cluster Logic)
+                                // Assign distinct angles for different subjects if possible, or just random
                                 const position = getNodePosition(i, nodes.length);
                                 const size = 60 + (node.strength * 80);
                                 const strengthPercent = Math.round(node.strength * 100);
@@ -146,9 +148,13 @@ export default function KnowledgeGraph() {
                                             bg-gradient-to-br ${colorClass}
                                             shadow-glow transition-all duration-300
                                             hover:shadow-glow-lg
+                                            relative
                                         `}>
                                             <Icon className="h-6 w-6 mb-1" />
                                             <div className="text-center px-2">
+                                                <div className="text-[10px] uppercase font-bold tracking-wider opacity-70 mb-0.5">
+                                                    {node.subject}
+                                                </div>
                                                 <div className="font-bold text-sm leading-tight mb-1">
                                                     {node.topic}
                                                 </div>

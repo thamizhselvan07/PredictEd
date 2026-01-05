@@ -1,4 +1,5 @@
 from sqlalchemy.orm import Session
+import models
 from models import KnowledgeNode, User, QuestionLog
 from datetime import datetime
 
@@ -6,18 +7,23 @@ class KnowledgeGraphEngine:
     def __init__(self, db: Session):
         self.db = db
 
-    def update_topic_strength(self, user_id: int, topic: str, is_correct: bool, difficulty: float):
+    def update_topic_strength(self, user_id: int, topic: str, is_correct: bool, difficulty: float, subject_id: int = None):
         """
         Updates the knowledge node strength for a user/topic based on recent performance.
         Uses a moving average approach with difficulty weighting.
         """
-        node = self.db.query(KnowledgeNode).filter(
+        # Try to find existing node
+        query = self.db.query(KnowledgeNode).filter(
             KnowledgeNode.user_id == user_id, 
             KnowledgeNode.topic == topic
-        ).first()
+        )
+        if subject_id:
+            query = query.filter(KnowledgeNode.subject_id == subject_id)
+            
+        node = query.first()
 
         if not node:
-            node = KnowledgeNode(user_id=user_id, topic=topic, strength_score=0.1)
+            node = KnowledgeNode(user_id=user_id, topic=topic, strength_score=0.1, subject_id=subject_id)
             self.db.add(node)
         
         # Adaptive Logic:
@@ -44,6 +50,20 @@ class KnowledgeGraphEngine:
         return new_score
 
     def get_user_knowledge_graph(self, user_id: int):
-        """Returns all knowledge nodes for a user."""
-        nodes = self.db.query(KnowledgeNode).filter(KnowledgeNode.user_id == user_id).all()
-        return [{"topic": n.topic, "strength": n.strength_score} for n in nodes]
+        """Returns all knowledge nodes for a user, including subject info."""
+        # Join with Subject table to get names
+        results = (
+            self.db.query(KnowledgeNode, models.Subject.name)
+            .outerjoin(models.Subject, KnowledgeNode.subject_id == models.Subject.id)
+            .filter(KnowledgeNode.user_id == user_id)
+            .all()
+        )
+        
+        nodes = []
+        for node, subject_name in results:
+            nodes.append({
+                "topic": node.topic, 
+                "strength": node.strength_score,
+                "subject": subject_name or "General"
+            })
+        return nodes

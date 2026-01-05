@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import { Card, CardContent } from './components/Card';
 import { Button } from './components/Button';
 import { DifficultyBadge } from './components/Badge';
 import { LoadingSpinner, PageLoader } from './components/LoadingSpinner';
-import { getNextQuestion, submitAnswer, resetQuiz } from './api';
+import { getNextQuestion, submitAnswer, resetQuiz, getNextQuestionForAttempt } from './api';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     CheckCircle,
@@ -20,6 +21,8 @@ import {
 import { useGamification } from './contexts/GamificationContext';
 
 export default function Quiz() {
+    const { quizId } = useParams();
+    const navigate = useNavigate();
     const [question, setQuestion] = useState(null);
     const [loading, setLoading] = useState(true);
     const [feedback, setFeedback] = useState(null);
@@ -35,10 +38,13 @@ export default function Quiz() {
         setLoading(true);
         setFeedback(null);
         setSelectedOption(null);
-        setTimer(0);
+        // setTimer(0); // Don't reset timer for the whole quiz, track total time? Or per question?
+        // User asked for "Total response time". Timer usually per quiz.
+        // But here we show per question timer in UI.
         setError(null);
         try {
-            const res = await getNextQuestion(1);
+            // quizId from URL is actually attemptId
+            const res = await getNextQuestionForAttempt(quizId);
             if (res.data) {
                 setQuestion(res.data);
             } else {
@@ -47,6 +53,7 @@ export default function Quiz() {
         } catch (err) {
             console.error(err);
             if (err.response && err.response.status === 404) {
+                // 404 means no more questions or attempt invalid
                 setNoQuestions(true);
             } else {
                 setError("Something went wrong while fetching the question. Please try again.");
@@ -233,7 +240,7 @@ export default function Quiz() {
                                     <div className="flex items-center gap-2">
                                         <Brain className="h-5 w-5 text-primary" />
                                         <span className="text-sm font-semibold text-primary uppercase tracking-wider">
-                                            {question.topic}
+                                            {question.subject_name ? `${question.subject_name} | ` : ''}{question.topic}
                                         </span>
                                     </div>
 

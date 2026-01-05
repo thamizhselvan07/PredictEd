@@ -49,38 +49,276 @@ class AnswerSubmission(BaseModel):
 class ChatRequest(BaseModel):
     message: str
 
+class SignupRequest(BaseModel):
+    username: str
+    password: str
+    email: str
+
+class VerifyRequest(BaseModel):
+    email: str
+    code: str
+
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
 # --- Endpoints ---
+
+# --- Authentication ---
+import random
+import string
+
+@app.post("/api/auth/signup")
+def signup(req: SignupRequest, db: Session = Depends(get_db)):
+    if db.query(models.User).filter(models.User.email == req.email).first():
+        raise HTTPException(status_code=400, detail="Email already registered")
+    
+    if db.query(models.User).filter(models.User.username == req.username).first():
+        raise HTTPException(status_code=400, detail="Username taken")
+        
+    code = ''.join(random.choices(string.digits, k=6))
+    
+    user = models.User(
+        username=req.username,
+        email=req.email,
+        hashed_password=req.password, # In production hash this!
+        verification_code=code,
+        is_verified=False
+    )
+    db.add(user)
+    db.commit()
+    
+    # Simulate Email Sending
+    print(f"[{datetime.utcnow()}] VERIFICATION CODE for {req.email}: {code}")
+    
+    return {"message": "Signup successful. Check console for code."}
+
+@app.post("/api/auth/verify")
+def verify_email(req: VerifyRequest, db: Session = Depends(get_db)):
+    user = db.query(models.User).filter(models.User.email == req.email).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+        
+    if user.verification_code != req.code:
+        raise HTTPException(status_code=400, detail="Invalid code")
+        
+    user.is_verified = True
+    user.verification_code = None
+    db.commit()
+    
+    return {"message": "Verified successfully"}
+
+@app.post("/api/auth/login")
+def login(req: LoginRequest, db: Session = Depends(get_db)):
+    user = db.query(models.User).filter(models.User.username == req.username).first()
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+        
+    if user.hashed_password != req.password:
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+        
+    if not user.is_verified:
+        raise HTTPException(status_code=403, detail="Email not verified")
+        
+    return {
+        "user_id": user.id,
+        "username": user.username,
+        "email": user.email,
+        "token": "fake-jwt-token-for-demo"
+    }
 
 @app.on_event("startup")
 def startup_event():
     # Seed data
     db = database.SessionLocal()
-    gen = QuestionGenerator(db)
-    gen.seed_questions()
+    try:
+        gen = QuestionGenerator(db)
+        gen.seed_questions()
+        
+        # Ensure a demo user exists
+        if not db.query(models.User).filter(models.User.username == "student").first():
+            db.add(models.User(
+                username="student", 
+                hashed_password="student", # Simple password for demo
+                email="student@demo.com",
+                is_verified=True
+            ))
+            db.commit()
+    except Exception as e:
+        print(f"Startup Error: {e}")
+    finally:
+        db.close()
+
+# --- New Hierarchy Endpoints ---
+
+@app.get("/streams")
+def get_streams(db: Session = Depends(get_db)):
+    return db.query(models.Stream).all()
+
+@app.get("/exams")
+def get_exams(stream_id: int, db: Session = Depends(get_db)):
+    return db.query(models.Exam).filter(models.Exam.stream_id == stream_id).all()
+
+@app.get("/subjects")
+def get_subjects(exam_id: int, db: Session = Depends(get_db)):
+    return db.query(models.Subject).filter(models.Subject.exam_id == exam_id).all()
+
+@app.get("/quizzes")
+def get_quizzes(subject_id: int, db: Session = Depends(get_db)):
+    return db.query(models.Quiz).filter(models.Quiz.subject_id == subject_id).all()
+
+# Modified Quiz Logic
+
+# Valid Quiz Types
+QUIZ_TYPES = {
+    "basics": "Basics Quiz",
+    "concept": "Concept Strength Test",
+    "mixed": "Mixed Difficulty Quiz",
+    "full": "Full-Length Subject Test"
+}
+
+@app.get("/quiz-types")
+def get_quiz_types():
+    return [{"id": k, "name": v} for k, v in QUIZ_TYPES.items()]
+
+class StartQuizRequest(BaseModel):
+    subject_id: int
+    type: str
+
+@app.post("/quiz/start")
+def start_quiz_session(
+    req: StartQuizRequest, 
+    user_id: int = 1, 
+    db: Session = Depends(get_db)
+):
+    """Starts a new quiz session for a subject and type."""
+    if req.type not in QUIZ_TYPES:
+        raise HTTPException(status_code=400, detail="Invalid quiz type")
+
+    # Create a new attempt
+    attempt = models.QuizAttempt(
+        user_id=user_id,
+        subject_id=req.subject_id,
+        score=0.0,
+        timestamp=datetime.utcnow(),
+        total_time=0.0,
+        accuracy=0.0,
+        completed=False
+    )
+    db.add(attempt)
+    db.commit() # Get ID
+    db.refresh(attempt)
     
-    # Ensure a demo user exists
-    if not db.query(models.User).filter(models.User.username == "student").first():
-        db.add(models.User(username="student", hashed_password="hashed_secret")) # Simplified auth
-        db.commit()
-    db.close()
+    return {"attempt_id": attempt.id, "message": "Quiz started", "total_questions": 50}
 
-# Root endpoint removed to allow React Router to handle /
+@app.post("/exam/{exam_id}/start_mock")
+def start_mock_exam(
+    exam_id: int,
+    user_id: int = 1,
+    db: Session = Depends(get_db)
+):
+    """Starts a full mock exam session."""
+    attempt = models.QuizAttempt(
+        user_id=user_id,
+        exam_id=exam_id, # Track Exam
+        score=0.0,
+        timestamp=datetime.utcnow(),
+        total_time=0.0,
+        accuracy=0.0,
+        completed=False
+    )
+    db.add(attempt)
+    db.commit()
+    db.refresh(attempt)
+    return {"attempt_id": attempt.id, "message": "Mock Exam Started", "total_questions": 90}
 
-# 1. Start Quiz / Get Question
-@app.get("/quiz/next", response_model=QuestionResponse)
-def get_next_question(user_id: int = 1, db: Session = Depends(get_db)):
-    """Get the next adaptive question for the user."""
+
+@app.get("/quiz/{attempt_id}/next")
+def get_next_question_for_attempt(
+    attempt_id: int,
+    current_question_index: int = 0, # Frontend tracks this
+    user_id: int = 1, # Should be gathered from token in real app but passed for now
+    db: Session = Depends(get_db)
+):
+    """Get next question for the attempt."""
+    attempt = db.query(models.QuizAttempt).filter(models.QuizAttempt.id == attempt_id).first()
+    if not attempt:
+        raise HTTPException(status_code=404, detail="Attempt not found")
+        
+    subject_id = attempt.subject_id
+    
+    # Mock Exam Logic
+    if attempt.exam_id:
+        # Find subjects for this exam
+        subjects = db.query(models.Subject).filter(models.Subject.exam_id == attempt.exam_id).all()
+        if not subjects:
+             raise HTTPException(status_code=404, detail="No subjects found for exam")
+        
+        # Simple Logic: Rotate subjects based on question index
+        # e.g. 0-29 Subj 1, 30-59 Subj 2, etc. (assuming 30 q per sub)
+        # OR just Randomly pick one
+        # Let's do: Random Subject for now to simulate "Mixed"
+        # Ideally we map index 0->Physics, 1->Physics... 
+        # But frontend doesn't strictly enforce index.
+        # Let's pick a random subject from the list
+        import random
+        selected_sub = random.choice(subjects)
+        subject_id = selected_sub.id
+    
+    if not subject_id and attempt.quiz_id:
+        # Fallback if quiz_id is used
+        quiz = db.query(models.Quiz).filter(models.Quiz.id == attempt.quiz_id).first()
+        if quiz:
+             subject_id = quiz.subject_id
+             
+    if not subject_id:
+         raise HTTPException(status_code=400, detail="Corrupt attempt data (no subject)")
+
     gen = QuestionGenerator(db)
-    q = gen.get_next_question(user_id)
+    q = gen.get_next_question(user_id, subject_id=subject_id)
+    
     if not q:
-        raise HTTPException(status_code=404, detail="No questions available")
+         raise HTTPException(status_code=404, detail="No questions available")
+    
+    # Get subject name for UI
+    sub_name = db.query(models.Subject).filter(models.Subject.id == subject_id).first().name
+         
     return {
         "id": q.id,
         "topic": q.topic,
         "difficulty": q.difficulty,
         "content": q.content,
-        "options": q.options
+        "options": q.options,
+        "pyq_year": q.pyq_year,
+        "attempt_id": attempt_id,
+        "subject_name": sub_name 
     }
+
+
+@app.get("/quiz/question/next")
+def get_adaptive_question(
+    subject_id: int,
+    attempt_id: int,
+    user_id: int = 1,
+    db: Session = Depends(get_db)
+):
+    """Get the next adaptive question."""
+    gen = QuestionGenerator(db)
+    q = gen.get_next_question(user_id, subject_id=subject_id)
+    
+    if not q:
+         raise HTTPException(status_code=404, detail="No questions available")
+         
+    return {
+        "id": q.id,
+        "topic": q.topic,
+        "difficulty": q.difficulty,
+        "content": q.content,
+        "options": q.options,
+        "pyq_year": q.pyq_year,
+        "attempt_id": attempt_id
+    }
+
 
 # 2. Submit Answer & Update Knowledge Graph
 @app.post("/quiz/submit")
@@ -122,7 +360,13 @@ def submit_answer(submission: AnswerSubmission, user_id: int = 1, db: Session = 
 
     # Update Knowledge Graph
     kg = KnowledgeGraphEngine(db)
-    new_strength = kg.update_topic_strength(user_id, q.topic, is_correct, q.difficulty)
+    new_strength = kg.update_topic_strength(
+        user_id, 
+        q.topic, 
+        is_correct, 
+        q.difficulty,
+        subject_id=q.subject_id
+    )
     
     # Log (Simplify: create a transient attempt or just log directly? logging directly for demo speed)
     # Ideally we group under a QuizAttempt, but for "endless mode" we just log.
@@ -237,7 +481,8 @@ from fastapi.responses import FileResponse
 import os
 
 # Mount React Assets
-frontend_dist = "../frontend/dist"
+current_dir = os.path.dirname(os.path.abspath(__file__))
+frontend_dist = os.path.join(current_dir, "../frontend/dist")
 assets_path = os.path.join(frontend_dist, "assets")
 
 if os.path.exists(assets_path):
