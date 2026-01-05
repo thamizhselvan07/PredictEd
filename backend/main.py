@@ -150,6 +150,26 @@ def get_dashboard_stats(user_id: int = 1, db: Session = Depends(get_db)):
         "knowledge_graph": kg.get_user_knowledge_graph(user_id)
     }
 
+# 3.5 Reset Quiz Progress
+@app.post("/quiz/reset")
+def reset_progress(user_id: int = 1, db: Session = Depends(get_db)):
+    """Resets all progress for the user."""
+    # Delete logs first (foreign key dependency)
+    # Ideally use cascade, but manual deletes are safer for logic understanding here
+    
+    # Get user attempts
+    attempts = db.query(models.QuizAttempt).filter(models.QuizAttempt.user_id == user_id).all()
+    for att in attempts:
+        db.query(models.QuestionLog).filter(models.QuestionLog.attempt_id == att.id).delete()
+    
+    db.query(models.QuizAttempt).filter(models.QuizAttempt.user_id == user_id).delete()
+    
+    # Reset Knowledge Graph (Delete or Reset Score)
+    db.query(models.KnowledgeNode).filter(models.KnowledgeNode.user_id == user_id).delete()
+    
+    db.commit()
+    return {"message": "Progress reset successfully"}
+
 # 4. AI Tutor Chat
 @app.post("/chat/tutor")
 def chat_tutor(req: ChatRequest):

@@ -4,7 +4,7 @@ import { Card, CardContent } from './components/Card';
 import { Button } from './components/Button';
 import { DifficultyBadge } from './components/Badge';
 import { LoadingSpinner, PageLoader } from './components/LoadingSpinner';
-import { getNextQuestion, submitAnswer } from './api';
+import { getNextQuestion, submitAnswer, resetQuiz } from './api';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     CheckCircle,
@@ -13,8 +13,11 @@ import {
     Clock,
     Zap,
     Brain,
-    TrendingUp
+    TrendingUp,
+    RefreshCw,
+    AlertTriangle
 } from 'lucide-react';
+import { useGamification } from './contexts/GamificationContext';
 
 export default function Quiz() {
     const [question, setQuestion] = useState(null);
@@ -26,21 +29,44 @@ export default function Quiz() {
     const [score, setScore] = useState({ correct: 0, total: 0 });
 
     const [noQuestions, setNoQuestions] = useState(false);
+    const [error, setError] = useState(null);
 
     const fetchQuestion = async () => {
         setLoading(true);
         setFeedback(null);
         setSelectedOption(null);
         setTimer(0);
+        setError(null);
         try {
             const res = await getNextQuestion(1);
-            setQuestion(res.data);
+            if (res.data) {
+                setQuestion(res.data);
+            } else {
+                throw new Error("Empty data received");
+            }
         } catch (err) {
             console.error(err);
             if (err.response && err.response.status === 404) {
                 setNoQuestions(true);
+            } else {
+                setError("Something went wrong while fetching the question. Please try again.");
             }
         } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleReset = async () => {
+        if (!window.confirm("Are you sure you want to reset your progress? This cannot be undone.")) return;
+        setLoading(true);
+        try {
+            await resetQuiz(1);
+            setNoQuestions(false);
+            setScore({ correct: 0, total: 0 });
+            await fetchQuestion();
+        } catch (err) {
+            console.error(err);
+            setError("Failed to reset quiz. Please try again.");
             setLoading(false);
         }
     };
@@ -83,17 +109,18 @@ export default function Quiz() {
             }));
         } catch (err) {
             console.error(err);
+            setError("Failed to submit answer. Please try again.");
         } finally {
             setLoading(false);
         }
     };
 
-    if (loading && !question) {
+    if (loading && !question && !noQuestions && !error) {
         return <PageLoader message="AI is generating your next challenge..." />;
     }
 
     return (
-        <div className="min-h-screen bg-background">
+        <div className="min-h-screen bg-background text-foreground">
             <Navbar />
             <div className="max-w-4xl mx-auto p-6">
                 <motion.div
@@ -120,7 +147,7 @@ export default function Quiz() {
                                         Correct
                                     </div>
                                 </div>
-                                {!feedback && (
+                                {!feedback && !noQuestions && !error && (
                                     <div className="flex items-center gap-2 px-4 py-2 rounded-lg glass-card">
                                         <Clock className="h-4 w-4 text-primary" />
                                         <span className="font-mono text-lg">{timer}s</span>
@@ -130,7 +157,7 @@ export default function Quiz() {
                         </div>
                     </div>
 
-                    {question && (
+                    {question && !noQuestions && !error && (
                         <motion.div
                             initial={{ scale: 0.9, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
@@ -146,7 +173,28 @@ export default function Quiz() {
                 </motion.div>
 
                 <AnimatePresence mode="wait">
-                    {noQuestions ? (
+                    {error ? (
+                        <motion.div
+                            key="error"
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.9 }}
+                            className="bg-card text-card-foreground p-8 rounded-2xl shadow-lg text-center border border-error/20"
+                        >
+                            <AlertTriangle className="h-16 w-16 mx-auto mb-4 text-error animate-pulse" />
+                            <h2 className="text-2xl font-bold mb-2 text-error">Something went wrong</h2>
+                            <p className="text-muted-foreground mb-6">
+                                {error}
+                            </p>
+                            <Button onClick={fetchQuestion} variant="outline" className="mr-4">
+                                Try Again
+                            </Button>
+                            <Button onClick={handleReset} variant="outline" className="border-error text-error hover:bg-error/10">
+                                <RefreshCw className="mr-2 h-4 w-4" />
+                                Start Fresh
+                            </Button>
+                        </motion.div>
+                    ) : noQuestions ? (
                         <motion.div
                             key="completed"
                             initial={{ opacity: 0, scale: 0.9 }}
@@ -159,12 +207,16 @@ export default function Quiz() {
                             <p className="text-muted-foreground mb-6">
                                 You have answered all available questions. Great job!
                             </p>
-                            <div className="flex justify-center gap-4">
+                            <div className="flex justify-center gap-4 flex-wrap">
                                 <Button onClick={() => window.location.href = '/dashboard'} variant="outline">
                                     Return to Dashboard
                                 </Button>
                                 <Button onClick={() => window.location.href = '/graph'}>
                                     View Knowledge Graph
+                                </Button>
+                                <Button onClick={handleReset} variant="outline" className="border-primary/50 hover:bg-primary/10">
+                                    <RefreshCw className="mr-2 h-4 w-4" />
+                                    Reset Progress
                                 </Button>
                             </div>
                         </motion.div>
@@ -190,7 +242,7 @@ export default function Quiz() {
                                     </h2>
 
                                     <div className="grid gap-4 pt-4">
-                                        {question.options.map((opt, i) => {
+                                        {question.options && question.options.map((opt, i) => {
                                             let btnClass = "justify-start h-auto py-5 px-6 text-left text-lg font-medium transition-all duration-200 ";
                                             let icon = null;
 
