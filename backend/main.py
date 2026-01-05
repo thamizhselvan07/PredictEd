@@ -154,20 +154,62 @@ def get_dashboard_stats(user_id: int = 1, db: Session = Depends(get_db)):
 @app.post("/chat/tutor")
 def chat_tutor(req: ChatRequest):
     """
-    Simulated AI Tutor.
-    In production, this would call OpenAI/Gemini API.
-    Here we use rule-based responses for strict control/demo speed.
+    AI Tutor powered by Google Gemini.
+    Falls back to simulated response if no API key is set.
     """
-    msg = req.message.lower()
-    response = "That's an interesting question! can you look at the study materials?"
+    import os
+    import google.generativeai as genai
+    from dotenv import load_dotenv
+
+    load_dotenv()
     
-    if "explain" in msg or "what is" in msg:
-        response = "That sounds like a conceptual question. Let's break it down using the Feynman technique..."
-    elif "hard" in msg or "stuck" in msg:
-        response = "I noticed you're finding this topic challenging. Shall we try a simpler example first?"
-    elif "next" in msg:
-        response = "Ready for the next challenge? Let's go!"
+    api_key = os.getenv("GEMINI_API_KEY")
+    msg = req.message
+    
+    if not api_key or api_key == "YOUR_GEMINI_API_KEY_HERE":
+        # Enhanced Simulation Mode (Demo)
+        keyword_responses = {
+            "react": "React is a JavaScript library for building user interfaces. It uses components and a virtual DOM for efficient updates.",
+            "python": "Python is a high-level, interpreted programming language known for its readability and vast ecosystem of libraries.",
+            "ai": "Artificial Intelligence involves creating systems that can perform tasks requiring human intelligence, such as learning and problem-solving.",
+            "sql": "SQL (Structured Query Language) is the standard language for managing and manipulating relational databases.",
+            "hook": "In React, Hooks allow you to use state and other React features without writing a class component (e.g., useState, useEffect).",
+            "list": "In Python, a list is a mutable, ordered sequence of elements. You can add items using `.append()`.",
+        }
         
+        msg_lower = msg.lower()
+        response = "I'm currently running in Demo Mode (No API Key). "
+        
+        found = False
+        for key, val in keyword_responses.items():
+            if key in msg_lower:
+               response += val
+               found = True
+               break
+        
+        if not found:
+            response += "That's a great question! Try asking about React, Python, AI, or SQL to see my knowledge base in action."
+            
+    else:
+        try:
+            genai.configure(api_key=api_key)
+            # Using specific available model from list_models()
+            model = genai.GenerativeModel('gemini-2.0-flash')
+            
+            # Context for the AI
+            context = """You are an expert AI Tutor for a competitive exam platform. 
+            Your goal is to help students understand concepts in React, Python, AI, SQL, and Data Structures.
+            Be encouraging, concise, and use the Socratic method when appropriate.
+            If the user is stuck, give a hint, not just the answer.
+            """
+            
+            chat = model.start_chat(history=[])
+            response_obj = chat.send_message(f"{context}\n\nUser Question: {msg}")
+            response = response_obj.text
+        except Exception as e:
+            print(f"Gemini API Error: {e}")
+            response = "I'm having trouble connecting to my brain right now. Please try again later."
+
     return {"reply": response}
 
 from fastapi.staticfiles import StaticFiles

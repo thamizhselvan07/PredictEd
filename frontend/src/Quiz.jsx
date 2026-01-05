@@ -25,6 +25,8 @@ export default function Quiz() {
     const [timer, setTimer] = useState(0);
     const [score, setScore] = useState({ correct: 0, total: 0 });
 
+    const [noQuestions, setNoQuestions] = useState(false);
+
     const fetchQuestion = async () => {
         setLoading(true);
         setFeedback(null);
@@ -35,6 +37,9 @@ export default function Quiz() {
             setQuestion(res.data);
         } catch (err) {
             console.error(err);
+            if (err.response && err.response.status === 404) {
+                setNoQuestions(true);
+            }
         } finally {
             setLoading(false);
         }
@@ -141,7 +146,29 @@ export default function Quiz() {
                 </motion.div>
 
                 <AnimatePresence mode="wait">
-                    {question && (
+                    {noQuestions ? (
+                        <motion.div
+                            key="completed"
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.9 }}
+                            className="bg-card text-card-foreground p-8 rounded-2xl shadow-lg text-center"
+                        >
+                            <Brain className="h-16 w-16 mx-auto mb-4 text-primary animate-pulse" />
+                            <h2 className="text-3xl font-bold mb-2">Quiz Completed!</h2>
+                            <p className="text-muted-foreground mb-6">
+                                You have answered all available questions. Great job!
+                            </p>
+                            <div className="flex justify-center gap-4">
+                                <Button onClick={() => window.location.href = '/dashboard'} variant="outline">
+                                    Return to Dashboard
+                                </Button>
+                                <Button onClick={() => window.location.href = '/graph'}>
+                                    View Knowledge Graph
+                                </Button>
+                            </div>
+                        </motion.div>
+                    ) : question ? (
                         <motion.div
                             key={question.id}
                             initial={{ x: 30, opacity: 0 }}
@@ -284,9 +311,9 @@ export default function Quiz() {
                                 </motion.div>
                             )}
                         </motion.div>
-                    )}
+                    ) : null}
                 </AnimatePresence>
             </div>
-        </div>
+        </div >
     );
 }

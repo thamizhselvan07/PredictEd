@@ -12,10 +12,10 @@
 
     body {
         @apply bg-background text-foreground font-sans antialiased;
-        background: linear-gradient(135deg, #0A0E1A 0%, #111827 50%, #0F172A 100%);
+        background: radial-gradient(circle at top center, #1a1a1a 0%, #050505 100%);
         background-attachment: fixed;
     }
-    
+
     /* Smooth scrolling */
     html {
         scroll-behavior: smooth;
@@ -23,71 +23,82 @@
 }
 
 @layer components {
+
     /* Glassmorphism Card */
     .glass-card {
         @apply backdrop-blur-xl bg-white/5 border border-white/10 shadow-glass;
     }
-    
+
     /* Gradient Text */
     .gradient-text {
         @apply bg-clip-text text-transparent bg-gradient-to-r from-primary via-accent to-secondary;
     }
-    
+
     /* Glow Effect */
     .glow {
         @apply shadow-glow transition-shadow duration-300;
     }
-    
+
     .glow:hover {
         @apply shadow-glow-lg;
     }
-    
+
     /* Animated Border */
     .animated-border {
         @apply relative overflow-hidden;
     }
-    
+
     .animated-border::before {
         content: '';
         @apply absolute inset-0 bg-gradient-to-r from-primary via-accent to-secondary opacity-20 blur-xl;
         animation: rotate 4s linear infinite;
     }
-    
+
     @keyframes rotate {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
+        0% {
+            transform: rotate(0deg);
+        }
+
+        100% {
+            transform: rotate(360deg);
+        }
     }
-    
+
     /* Progress Bar */
     .progress-bar {
         @apply relative h-2 bg-muted rounded-full overflow-hidden;
     }
-    
+
     .progress-fill {
         @apply absolute inset-y-0 left-0 bg-gradient-to-r from-primary to-accent rounded-full transition-all duration-500;
     }
-    
+
     /* Shimmer Loading */
     .shimmer {
         @apply relative overflow-hidden;
-        background: linear-gradient(90deg, 
-            rgba(255, 255, 255, 0.05) 0%, 
-            rgba(255, 255, 255, 0.1) 50%, 
-            rgba(255, 255, 255, 0.05) 100%);
+        background: linear-gradient(90deg,
+                rgba(255, 255, 255, 0.05) 0%,
+                rgba(255, 255, 255, 0.1) 50%,
+                rgba(255, 255, 255, 0.05) 100%);
         background-size: 200% 100%;
         animation: shimmer 2s infinite;
     }
-    
+
     @keyframes shimmer {
-        0% { background-position: -200% 0; }
-        100% { background-position: 200% 0; }
+        0% {
+            background-position: -200% 0;
+        }
+
+        100% {
+            background-position: 200% 0;
+        }
     }
-    
+
     /* Floating Animation */
     .float-animation {
         animation: float 6s ease-in-out infinite;
     }
-    
+
     /* Stat Card Hover Effect */
     .stat-card {
         @apply transform transition-all duration-300 hover:scale-105 hover:shadow-glow;
@@ -95,35 +106,36 @@
 }
 
 @layer utilities {
+
     /* Text Utilities */
     .text-shadow {
         text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
     }
-    
+
     .text-glow {
-        text-shadow: 0 0 20px rgba(45, 104, 196, 0.8);
+        text-shadow: 0 0 20px rgba(0, 240, 255, 0.6);
     }
-    
+
     /* Hide scrollbar */
     .no-scrollbar::-webkit-scrollbar {
         display: none;
     }
-    
+
     .no-scrollbar {
         -ms-overflow-style: none;
         scrollbar-width: none;
     }
-    
+
     /* Custom Scrollbar */
     .custom-scrollbar::-webkit-scrollbar {
         width: 8px;
         height: 8px;
     }
-    
+
     .custom-scrollbar::-webkit-scrollbar-track {
         @apply bg-muted/20 rounded-full;
     }
-    
+
     .custom-scrollbar::-webkit-scrollbar-thumb {
         @apply bg-primary/50 rounded-full hover:bg-primary/70;
     }
