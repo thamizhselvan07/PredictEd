@@ -1,17 +1,19 @@
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import { Card, CardContent, CardHeader, CardTitle } from './components/Card';
 import { StatCard } from './components/StatCard';
 import { ProgressBar } from './components/ProgressBar';
 import { RiskBadge } from './components/Badge';
+import { ActivityHeatmap } from './components/ActivityHeatmap';
 import { PageLoader } from './components/LoadingSpinner';
 import { getDashboardStats } from './api';
 import { Line, Radar } from 'react-chartjs-2';
 import { motion } from 'framer-motion';
-import { 
-    Target, 
-    TrendingUp, 
-    Award, 
+import {
+    Target,
+    TrendingUp,
+    Award,
     AlertTriangle,
     Brain,
     Zap,
@@ -68,7 +70,7 @@ export default function Dashboard() {
         labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Current'],
         datasets: [
             {
-                label: 'Mastery Score',
+                label: 'You',
                 data: [55, 62, 70, 78, stats?.stats.average_score || 85],
                 borderColor: '#2D68C4',
                 backgroundColor: 'rgba(45, 104, 196, 0.1)',
@@ -80,6 +82,19 @@ export default function Dashboard() {
                 pointRadius: 6,
                 pointHoverRadius: 8,
             },
+            {
+                label: 'Top 10%',
+                data: [75, 80, 85, 88, 92],
+                borderColor: '#10B981', // Emerald 500
+                backgroundColor: 'transparent',
+                borderDash: [5, 5],
+                tension: 0.4,
+                pointBackgroundColor: '#10B981',
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2,
+                pointRadius: 4,
+                pointHoverRadius: 6,
+            },
         ],
     };
 
@@ -87,7 +102,7 @@ export default function Dashboard() {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-            legend: { 
+            legend: {
                 display: false
             },
             tooltip: {
@@ -101,12 +116,12 @@ export default function Dashboard() {
             }
         },
         scales: {
-            y: { 
+            y: {
                 grid: { color: 'rgba(255, 255, 255, 0.05)' },
                 ticks: { color: '#9CA3AF' },
                 border: { dash: [5, 5] },
             },
-            x: { 
+            x: {
                 grid: { color: 'rgba(255, 255, 255, 0.05)' },
                 ticks: { color: '#9CA3AF' },
             },
@@ -144,7 +159,7 @@ export default function Dashboard() {
             r: {
                 beginAtZero: true,
                 max: 100,
-                ticks: { 
+                ticks: {
                     color: '#9CA3AF',
                     backdropColor: 'transparent',
                 },
@@ -159,7 +174,7 @@ export default function Dashboard() {
             <Navbar />
             <div className="max-w-7xl mx-auto p-6 space-y-8 custom-scrollbar">
                 {/* Header */}
-                <motion.div 
+                <motion.div
                     initial={{ opacity: 0, y: -20 }}
                     animate={{ opacity: 1, y: 0 }}
                     className="flex items-center justify-between"
@@ -172,7 +187,7 @@ export default function Dashboard() {
                             Real-time insights into your adaptive learning journey
                         </p>
                     </div>
-                    <motion.div 
+                    <motion.div
                         whileHover={{ scale: 1.05 }}
                         className="glass-card px-6 py-3 rounded-xl border"
                     >
@@ -181,6 +196,19 @@ export default function Dashboard() {
                             {stats?.stats.mastery_level}
                         </div>
                     </motion.div>
+                    <Link to="/zen">
+                        <motion.button
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            className="bg-zinc-900 border border-zinc-800 text-zinc-300 px-6 py-4 rounded-xl flex items-center gap-3 hover:bg-black hover:text-white transition-colors"
+                        >
+                            <span className="text-2xl">🧘</span>
+                            <div className="text-left">
+                                <div className="text-xs text-muted-foreground uppercase tracking-wider">Focus Mode</div>
+                                <div className="font-bold">Enter Zen</div>
+                            </div>
+                        </motion.button>
+                    </Link>
                 </motion.div>
 
                 {/* Stats Grid */}
@@ -251,8 +279,8 @@ export default function Dashboard() {
                                                     {Math.round(area.predicted_fail_probability * 100)}%
                                                 </span>
                                             </div>
-                                            <ProgressBar 
-                                                value={area.predicted_fail_probability * 100} 
+                                            <ProgressBar
+                                                value={area.predicted_fail_probability * 100}
                                                 variant="error"
                                                 showLabel={false}
                                             />
@@ -264,8 +292,8 @@ export default function Dashboard() {
                                                     {area.current_mastery}%
                                                 </span>
                                             </div>
-                                            <ProgressBar 
-                                                value={area.current_mastery} 
+                                            <ProgressBar
+                                                value={area.current_mastery}
                                                 variant="warning"
                                                 showLabel={false}
                                             />
@@ -300,16 +328,15 @@ export default function Dashboard() {
                                     <CardContent className="p-4">
                                         <div className="flex items-center justify-between mb-3">
                                             <h3 className="font-semibold text-sm">{node.topic}</h3>
-                                            <Zap className={`h-4 w-4 ${
-                                                node.strength >= 0.7 ? 'text-success' :
+                                            <Zap className={`h-4 w-4 ${node.strength >= 0.7 ? 'text-success' :
                                                 node.strength >= 0.4 ? 'text-warning' : 'text-error'
-                                            }`} />
+                                                }`} />
                                         </div>
-                                        <ProgressBar 
+                                        <ProgressBar
                                             value={node.strength * 100}
                                             variant={
                                                 node.strength >= 0.7 ? 'success' :
-                                                node.strength >= 0.4 ? 'warning' : 'error'
+                                                    node.strength >= 0.4 ? 'warning' : 'error'
                                             }
                                         />
                                     </CardContent>
@@ -317,6 +344,34 @@ export default function Dashboard() {
                             </motion.div>
                         ))}
                     </div>
+                </motion.div>
+
+                {/* Activity Heatmap */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.5 }}
+                >
+                    <div className="flex items-center gap-3 mb-6">
+                        <TrendingUp className="h-6 w-6 text-primary" />
+                        <h2 className="text-2xl font-bold">Study Consistency</h2>
+                    </div>
+                    <Card className="glass-card">
+                        <CardContent className="p-6">
+                            <ActivityHeatmap />
+                            <div className="flex justify-between mt-4 text-xs text-muted-foreground">
+                                <span>Less</span>
+                                <div className="flex gap-1">
+                                    <div className="w-3 h-3 rounded-sm bg-white/5" />
+                                    <div className="w-3 h-3 rounded-sm bg-primary/20" />
+                                    <div className="w-3 h-3 rounded-sm bg-primary/40" />
+                                    <div className="w-3 h-3 rounded-sm bg-primary/60" />
+                                    <div className="w-3 h-3 rounded-sm bg-primary/90" />
+                                </div>
+                                <span>More</span>
+                            </div>
+                        </CardContent>
+                    </Card>
                 </motion.div>
 
                 {/* Charts Section */}
@@ -337,7 +392,7 @@ export default function Dashboard() {
                             <Line options={lineChartOptions} data={lineChartData} />
                         </CardContent>
                     </Card>
-                    
+
                     <Card className="glass-card">
                         <CardHeader>
                             <div className="flex items-center gap-2">

@@ -1,9 +1,11 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, BrainCircuit, MessageSquare, BookOpen } from 'lucide-react';
+import { LayoutDashboard, BrainCircuit, MessageSquare, BookOpen, Trophy, Zap, Flame } from 'lucide-react';
+import { useGamification } from '../contexts/GamificationContext';
 
 export default function Navbar() {
     const location = useLocation();
+    const { level, streak, progressToNextLevel } = useGamification();
 
     const navItems = [
         { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
@@ -19,7 +21,24 @@ export default function Navbar() {
                     <Link to="/" className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500">
                         AdaptiveAI
                     </Link>
-                    <div className="flex space-x-4">
+                    <div className="flex items-center space-x-4">
+                        <div className="hidden md:flex items-center gap-4 mr-4 bg-muted/30 px-4 py-1.5 rounded-full border border-white/5">
+                            <div className="flex items-center gap-1.5" title="Current Level">
+                                <Trophy className="h-4 w-4 text-yellow-500" />
+                                <span className="font-bold text-sm">Lvl {level}</span>
+                            </div>
+                            <div className="h-4 w-[1px] bg-border" />
+                            <div className="flex items-center gap-1.5" title="XP Progress">
+                                <Zap className="h-4 w-4 text-blue-400" />
+                                <span className="font-mono text-xs">{Math.round(progressToNextLevel)}%</span>
+                            </div>
+                            <div className="h-4 w-[1px] bg-border" />
+                            <div className="flex items-center gap-1.5" title="Daily Streak">
+                                <Flame className="h-4 w-4 text-orange-500 box-shadow-glow" />
+                                <span className="font-bold text-sm text-orange-400">{streak}</span>
+                            </div>
+                        </div>
+
                         {navItems.map((item) => {
                             const Icon = item.icon;
                             const isActive = location.pathname === item.path;
@@ -28,8 +47,8 @@ export default function Navbar() {
                                     key={item.name}
                                     to={item.path}
                                     className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${isActive
-                                            ? 'bg-primary/10 text-primary'
-                                            : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                                        ? 'bg-primary/10 text-primary'
+                                        : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
                                         }`}
                                 >
                                     <Icon className="h-4 w-4" />

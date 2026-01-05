@@ -6,11 +6,11 @@ import { DifficultyBadge } from './components/Badge';
 import { LoadingSpinner, PageLoader } from './components/LoadingSpinner';
 import { getNextQuestion, submitAnswer } from './api';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-    CheckCircle, 
-    XCircle, 
-    ArrowRight, 
-    Clock, 
+import {
+    CheckCircle,
+    XCircle,
+    ArrowRight,
+    Clock,
     Zap,
     Brain,
     TrendingUp
@@ -21,6 +21,7 @@ export default function Quiz() {
     const [loading, setLoading] = useState(true);
     const [feedback, setFeedback] = useState(null);
     const [selectedOption, setSelectedOption] = useState(null);
+    const { addXp } = useGamification();
     const [timer, setTimer] = useState(0);
     const [score, setScore] = useState({ correct: 0, total: 0 });
 
@@ -68,6 +69,9 @@ export default function Quiz() {
                 time_taken: timer
             });
             setFeedback(res.data);
+            if (res.data.correct) {
+                addXp(50);
+            }
             setScore(prev => ({
                 correct: prev.correct + (res.data.correct ? 1 : 0),
                 total: prev.total + 1
@@ -87,8 +91,7 @@ export default function Quiz() {
         <div className="min-h-screen bg-background">
             <Navbar />
             <div className="max-w-4xl mx-auto p-6">
-                {/* Header with Stats */}
-                <motion.div 
+                <motion.div
                     initial={{ opacity: 0, y: -20 }}
                     animate={{ opacity: 1, y: 0 }}
                     className="mb-8"
@@ -123,7 +126,7 @@ export default function Quiz() {
                     </div>
 
                     {question && (
-                        <motion.div 
+                        <motion.div
                             initial={{ scale: 0.9, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
                             className="flex items-center gap-3 flex-wrap"
@@ -138,7 +141,7 @@ export default function Quiz() {
                 </motion.div>
 
                 <AnimatePresence mode="wait">
-                    {question ? (
+                    {question && (
                         <motion.div
                             key={question.id}
                             initial={{ x: 30, opacity: 0 }}
@@ -148,7 +151,6 @@ export default function Quiz() {
                         >
                             <Card className="glass-card border-primary/30 shadow-glow">
                                 <CardContent className="p-8 space-y-8">
-                                    {/* Topic Badge */}
                                     <div className="flex items-center gap-2">
                                         <Brain className="h-5 w-5 text-primary" />
                                         <span className="text-sm font-semibold text-primary uppercase tracking-wider">
@@ -156,12 +158,10 @@ export default function Quiz() {
                                         </span>
                                     </div>
 
-                                    {/* Question */}
                                     <h2 className="text-3xl font-bold text-foreground leading-relaxed">
                                         {question.content}
                                     </h2>
 
-                                    {/* Options */}
                                     <div className="grid gap-4 pt-4">
                                         {question.options.map((opt, i) => {
                                             let btnClass = "justify-start h-auto py-5 px-6 text-left text-lg font-medium transition-all duration-200 ";
@@ -214,14 +214,12 @@ export default function Quiz() {
                                 </CardContent>
                             </Card>
 
-                            {/* Feedback Section */}
                             {feedback && (
                                 <motion.div
                                     initial={{ opacity: 0, y: 20 }}
                                     animate={{ opacity: 1, y: 0 }}
-                                    className={`mt-6 p-6 rounded-2xl glass-card border-2 ${
-                                        feedback.correct ? 'border-success/50 bg-success/5' : 'border-error/50 bg-error/5'
-                                    }`}
+                                    className={`mt-6 p-6 rounded-2xl glass-card border-2 ${feedback.correct ? 'border-success/50 bg-success/5' : 'border-error/50 bg-error/5'
+                                        }`}
                                 >
                                     <div className="flex items-start justify-between gap-6">
                                         <div className="flex-1">
@@ -231,10 +229,9 @@ export default function Quiz() {
                                                 ) : (
                                                     <XCircle className="h-8 w-8 text-error" />
                                                 )}
-                                                <h3 className={`text-2xl font-bold ${
-                                                    feedback.correct ? "text-success" : "text-error"
-                                                }`}>
-                                                    {feedback.correct ? "Excellent Work!" : "Not Quite Right"}
+                                                <h3 className={`text-2xl font-bold ${feedback.correct ? "text-success" : "text-error"
+                                                    }`}>
+                                                    {feedback.correct ? "Excellent Work! +50 XP" : "Not Quite Right"}
                                                 </h3>
                                             </div>
                                             <p className="text-foreground/80 mb-4 text-lg">
@@ -243,15 +240,15 @@ export default function Quiz() {
                                             <div className="flex items-center gap-2 text-sm">
                                                 <TrendingUp className="h-4 w-4 text-primary" />
                                                 <span className="text-muted-foreground">
-                                                    Updated {question.topic} strength: 
+                                                    Updated {question.topic} strength:
                                                 </span>
                                                 <span className="font-bold text-primary">
                                                     {(feedback.new_topic_strength * 100).toFixed(0)}%
                                                 </span>
                                             </div>
                                         </div>
-                                        <Button 
-                                            onClick={fetchQuestion} 
+                                        <Button
+                                            onClick={fetchQuestion}
                                             size="lg"
                                             className="bg-gradient-to-r from-primary to-accent hover:shadow-glow"
                                         >
@@ -262,20 +259,18 @@ export default function Quiz() {
                                 </motion.div>
                             )}
 
-                            {/* Submit Button */}
                             {!feedback && (
-                                <motion.div 
+                                <motion.div
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
                                     className="mt-6 flex justify-end"
                                 >
-                                    <Button 
-                                        onClick={handleSubmit} 
+                                    <Button
+                                        onClick={handleSubmit}
                                         size="lg"
                                         disabled={!selectedOption || loading}
-                                        className={`bg-gradient-to-r from-primary to-accent hover:shadow-glow transition-all ${
-                                            selectedOption ? 'glow' : ''
-                                        }`}
+                                        className={`bg-gradient-to-r from-primary to-accent hover:shadow-glow transition-all ${selectedOption ? 'glow' : ''
+                                            }`}
                                     >
                                         {loading ? (
                                             <LoadingSpinner size="sm" message="" />
@@ -289,7 +284,7 @@ export default function Quiz() {
                                 </motion.div>
                             )}
                         </motion.div>
-                    ) : null}
+                    )}
                 </AnimatePresence>
             </div>
         </div>

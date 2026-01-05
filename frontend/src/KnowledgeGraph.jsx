@@ -28,7 +28,7 @@ export default function KnowledgeGraph() {
         const radius = 35; // percentage
         const centerX = 50;
         const centerY = 50;
-        
+
         return {
             left: `${centerX + radius * Math.cos(angle)}%`,
             top: `${centerY + radius * Math.sin(angle)}%`,
@@ -83,7 +83,7 @@ export default function KnowledgeGraph() {
                                     const y1 = "50%";
                                     const x2 = pos.left;
                                     const y2 = pos.top;
-                                    
+
                                     return (
                                         <motion.line
                                             key={i}
@@ -106,10 +106,10 @@ export default function KnowledgeGraph() {
                                 const position = getNodePosition(i, nodes.length);
                                 const size = 60 + (node.strength * 80);
                                 const strengthPercent = Math.round(node.strength * 100);
-                                
+
                                 let colorClass = 'from-error/30 to-error/10 border-error/50 text-error';
                                 let icon = Target;
-                                
+
                                 if (node.strength >= 0.7) {
                                     colorClass = 'from-success/30 to-success/10 border-success/50 text-success';
                                     icon = TrendingUp;
@@ -117,7 +117,7 @@ export default function KnowledgeGraph() {
                                     colorClass = 'from-warning/30 to-warning/10 border-warning/50 text-warning';
                                     icon = Zap;
                                 }
-                                
+
                                 const Icon = icon;
 
                                 return (
@@ -125,10 +125,10 @@ export default function KnowledgeGraph() {
                                         key={i}
                                         initial={{ scale: 0, opacity: 0 }}
                                         animate={{ scale: 1, opacity: 1 }}
-                                        transition={{ 
-                                            delay: 0.5 + i * 0.1, 
+                                        transition={{
+                                            delay: 0.5 + i * 0.1,
                                             type: "spring",
-                                            stiffness: 200 
+                                            stiffness: 200
                                         }}
                                         whileHover={{ scale: 1.15, zIndex: 30 }}
                                         className="absolute transform -translate-x-1/2 -translate-y-1/2 cursor-pointer"
