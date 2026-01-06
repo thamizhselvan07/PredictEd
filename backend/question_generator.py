@@ -8,9 +8,10 @@ class QuestionGenerator:
     def __init__(self, db: Session):
         self.db = db
 
-    def get_next_question(self, user_id: int, subject_id: int = None):
+    def get_next_question(self, user_id: int, subject_id: int = None, attempt_id: int = None):
         """
         Adapts to the user.
+        - If attempt_id is provided, check the Quiz linked to it for specific Topic/Mode constraints.
         """
         # Get list of answered question IDs for this user
         answered_ids = [
@@ -23,41 +24,95 @@ class QuestionGenerator:
         topic = None
         target_difficulty = 0.5
         
-        # Base query for KnowledgeNode
-        kn_query = self.db.query(KnowledgeNode).filter(KnowledgeNode.user_id == user_id)
-        if subject_id:
-            kn_query = kn_query.filter(KnowledgeNode.subject_id == subject_id)
-
-        # Get weak nodes
-        weak_nodes = kn_query.filter(KnowledgeNode.strength_score < 0.4).all()
-
-        if weak_nodes and random.random() < 0.3:
-            # Re-test weak area
-            node = random.choice(weak_nodes)
-            topic = node.topic
-            target_difficulty = max(0.1, node.strength_score)
-        else:
-            # Explore/Random
-            # Find available topics that have unanswered questions
-            available_topics_query = self.db.query(Question.topic)
-            if subject_id:
-                available_topics_query = available_topics_query.filter(Question.subject_id == subject_id)
-                
-            if answered_ids:
-                available_topics_query = available_topics_query.filter(~Question.id.in_(answered_ids))
-            
-            available_topics = available_topics_query.distinct().all()
-            
-            if available_topics:
-                topic = random.choice(available_topics)[0]
-                # Get current strength for this topic
-                node = kn_query.filter(KnowledgeNode.topic == topic).first()
-                target_difficulty = node.strength_score if node else 0.3 # Default to easy-medium if new
+        # --- NEW: Check Attempt Context for Topic Mock / Final Mock ---
+        is_topic_mock = False
+        is_final_mock = False
+        forced_topic = None
         
-        if not topic:
-            # If strictly filtered by subject and no topic found, maybe all answered or no topics?
+        if attempt_id:
+            attempt = self.db.query(models.QuizAttempt).filter(models.QuizAttempt.id == attempt_id).first()
+            if attempt and attempt.quiz_id:
+                quiz_obj = self.db.query(models.Quiz).filter(models.Quiz.id == attempt.quiz_id).first()
+                if quiz_obj:
+                    # Check for Topic in title
+                    title = quiz_obj.title
+                    if "Final Adaptive Mock" in title:
+                        is_final_mock = True
+                    elif "Mock" in title:
+                        is_topic_mock = True
+                        forced_topic = title.rpartition(" (")[0]
+                    elif "practice" in title and "(" in title:
+                        is_topic_mock = True # Reuse logic for strict filtering
+                        forced_topic = title.rpartition(" (")[0]
+
+        # --- LOGIC BRANCHING ---
+
+        if is_topic_mock and forced_topic:
+            # STRICT FILTER: Only from this topic
+            topic = forced_topic
+            # For mocks, we might want random difficulty or standard exam distribution.
+            # Let's keep it adaptive but strictly bounded to topic.
+            target_difficulty = 0.5 # Default start for mock
+            
+            # If user has history in this topic, adapt?
+            # For 30 Q mock, maybe just random valid questions from this topic is better for "Exam Feel"
+            # But adapting is fine too.
+        
+        elif is_final_mock:
+            # STRICT FILTER: Weak Areas + High Weightage
+            predictor = models.PredictorEngine(self.db)
+            weak_areas = predictor.predict_weak_areas(user_id)
+            
+            if weak_areas:
+                 # Pick a weak topic
+                 topic = random.choice(weak_areas)['topic']
+            else:
+                 # Determine highly weighted topics for this subject/exam?
+                 # Fallback to random
+                 pass
+        
+        else:
+            # STANDARD ADAPTIVE LOGIC (Existing)
+            # Base query for KnowledgeNode
+            kn_query = self.db.query(KnowledgeNode).filter(KnowledgeNode.user_id == user_id)
             if subject_id:
-                # Fallback: Just get any question from this subject
+                kn_query = kn_query.filter(KnowledgeNode.subject_id == subject_id)
+
+            # Get weak nodes
+            weak_nodes = kn_query.filter(KnowledgeNode.strength_score < 0.4).all()
+
+            if weak_nodes and random.random() < 0.3:
+                # Re-test weak area
+                node = random.choice(weak_nodes)
+                topic = node.topic
+                target_difficulty = max(0.1, node.strength_score)
+            else:
+                # Explore/Random
+                # Find available topics that have unanswered questions
+                available_topics_query = self.db.query(Question.topic)
+                if subject_id:
+                    available_topics_query = available_topics_query.filter(Question.subject_id == subject_id)
+                    
+                if answered_ids:
+                    available_topics_query = available_topics_query.filter(~Question.id.in_(answered_ids))
+                
+                available_topics = available_topics_query.distinct().all()
+                
+                if available_topics:
+                    topic = random.choice(available_topics)[0]
+                    # Get current strength for this topic
+                    node = kn_query.filter(KnowledgeNode.topic == topic).first()
+                    target_difficulty = node.strength_score if node else 0.3 # Default to easy-medium if new
+        
+        
+        # --- QUERY EXECUTION ---
+        if not topic and is_topic_mock:
+             # Should not happen if forced_topic is set, unless title parsing failed
+             pass
+
+        if not topic:
+            # Fallback for general/final mock if no weak areas found
+            if subject_id:
                 fallback_q = self.db.query(Question).filter(Question.subject_id == subject_id)
                 if answered_ids:
                     fallback_q = fallback_q.filter(~Question.id.in_(answered_ids))
@@ -80,6 +135,7 @@ class QuestionGenerator:
 
         # Fallback
         if not question:
+            # Try any difficulty in that topic (Double check)
             fallback_query = self.db.query(Question).filter(Question.topic == topic)
             if subject_id:
                 fallback_query = fallback_query.filter(Question.subject_id == subject_id)

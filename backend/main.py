@@ -10,6 +10,7 @@ from knowledge_graph import KnowledgeGraphEngine
 from predictor import PredictorEngine
 from question_generator import QuestionGenerator
 from analytics import AnalyticsEngine
+import pdf_quiz
 from pydantic import EmailStr
 import os
 from dotenv import load_dotenv
@@ -188,7 +189,9 @@ def get_quiz_types():
 
 class StartQuizRequest(BaseModel):
     subject_id: int
-    type: str
+    type: str # 'basics', 'concept', 'mixed', 'full'
+    topic: Optional[str] = None
+    mode: Optional[str] = "practice" # 'practice', 'topic_mock', 'final_mock'
 
 @app.post("/quiz/start")
 def start_quiz_session(
@@ -197,13 +200,40 @@ def start_quiz_session(
     db: Session = Depends(get_db)
 ):
     """Starts a new quiz session for a subject and type."""
-    if req.type not in QUIZ_TYPES:
+    # Logic for Topic Mock / Final Mock
+    quiz_title = req.type
+    if req.topic:
+        quiz_title = f"{req.topic} ({req.mode})"
+    
+    # Check if a Quiz exists for this topic/mode, or create generic
+    # For now, we rely on dynamic filtering in get_next_question based on Attempt Metadata
+    # But QuizAttempt doesn't have 'topic' column. We can use quiz_id or add topic column to Attempt?
+    # Simpler: Create a temporary Quiz entry or just use the Subject and store metadata in a JSON field if we had one.
+    # BEST APPROACH: Reuse 'quiz_id' by creating a placeholder Quiz for this topic if needed, OR just store it in memory/context?
+    # Let's create a new Quiz entry dynamically if it's a Topic Mock to track it properly.
+    
+    quiz = None
+    if req.topic:
+        quiz = db.query(models.Quiz).filter(models.Quiz.title == quiz_title, models.Quiz.subject_id == req.subject_id).first()
+        if not quiz:
+            quiz = models.Quiz(
+                title=quiz_title, 
+                subject_id=req.subject_id, 
+                questions_count=30 if req.mode == 'topic_mock' else (1000 if req.mode == 'practice' else 50)
+            )
+            db.add(quiz)
+            db.commit()
+            db.refresh(quiz)
+
+    # ... logic continues ...
+    if req.type not in QUIZ_TYPES and not req.topic:
         raise HTTPException(status_code=400, detail="Invalid quiz type")
 
     # Create a new attempt
     attempt = models.QuizAttempt(
         user_id=user_id,
         subject_id=req.subject_id,
+        quiz_id=quiz.id if quiz else None, # Link to topic quiz
         score=0.0,
         timestamp=datetime.utcnow(),
         total_time=0.0,
@@ -214,7 +244,8 @@ def start_quiz_session(
     db.commit() # Get ID
     db.refresh(attempt)
     
-    return {"attempt_id": attempt.id, "message": "Quiz started", "total_questions": 50}
+    q_count = 30 if req.mode == 'topic_mock' else (1000 if req.mode == 'practice' else 50)
+    return {"attempt_id": attempt.id, "message": "Quiz started", "total_questions": q_count}
 
 @app.post("/exam/{exam_id}/start_mock")
 def start_mock_exam(
@@ -275,9 +306,15 @@ def get_next_question_for_attempt(
     if not subject_id:
          raise HTTPException(status_code=400, detail="Corrupt attempt data (no subject)")
 
-    # Enforce 50 Questions Limit
+    # Enforce Dynamic Questions Limit
+    max_q = 50
+    if attempt.quiz_id:
+        quiz_obj = db.query(models.Quiz).filter(models.Quiz.id == attempt.quiz_id).first()
+        if quiz_obj:
+            max_q = quiz_obj.questions_count
+
     questions_answered = db.query(models.QuestionLog).filter(models.QuestionLog.attempt_id == attempt_id).count()
-    if questions_answered >= 50:
+    if questions_answered >= max_q:
          # Mark attempt as completed if not already
          if not attempt.completed:
              attempt.completed = True
@@ -285,13 +322,16 @@ def get_next_question_for_attempt(
          raise HTTPException(status_code=404, detail="Quiz Completed")
 
     gen = QuestionGenerator(db)
-    q = gen.get_next_question(user_id, subject_id=subject_id)
+    q = gen.get_next_question(user_id, subject_id=subject_id, attempt_id=attempt_id)
     
     if not q:
          raise HTTPException(status_code=404, detail="No questions available")
     
     # Get subject name for UI
-    sub_name = db.query(models.Subject).filter(models.Subject.id == subject_id).first().name
+    try:
+        sub_name = db.query(models.Subject).filter(models.Subject.id == subject_id).first().name
+    except:
+        sub_name = ""
          
     return {
         "id": q.id,
@@ -303,7 +343,7 @@ def get_next_question_for_attempt(
         "attempt_id": attempt_id,
         "subject_name": sub_name,
         "question_number": questions_answered + 1,
-        "total_questions": 50
+        "total_questions": max_q
     }
 
 
@@ -315,12 +355,37 @@ def get_adaptive_question(
     db: Session = Depends(get_db)
 ):
     """Get the next adaptive question."""
+    # check attempt limit
+    attempt = db.query(models.QuizAttempt).filter(models.QuizAttempt.id == attempt_id).first()
+    if not attempt:
+        raise HTTPException(status_code=404, detail="Attempt not found")
+
+    max_q = 50
+    if attempt.quiz_id:
+        quiz_obj = db.query(models.Quiz).filter(models.Quiz.id == attempt.quiz_id).first()
+        if quiz_obj:
+            max_q = quiz_obj.questions_count
+
+    questions_answered = db.query(models.QuestionLog).filter(models.QuestionLog.attempt_id == attempt_id).count()
+    if questions_answered >= max_q:
+         # Mark attempt as completed if not already
+         if not attempt.completed:
+             attempt.completed = True
+             db.commit()
+         raise HTTPException(status_code=404, detail="Quiz Completed")
+
     gen = QuestionGenerator(db)
-    q = gen.get_next_question(user_id, subject_id=subject_id)
+    q = gen.get_next_question(user_id, subject_id=subject_id, attempt_id=attempt_id)
     
     if not q:
          raise HTTPException(status_code=404, detail="No questions available")
-         
+    
+    # Get subject name for UI
+    try:
+        sub_name = db.query(models.Subject).filter(models.Subject.id == subject_id).first().name
+    except:
+        sub_name = ""
+
     return {
         "id": q.id,
         "topic": q.topic,
@@ -328,7 +393,10 @@ def get_adaptive_question(
         "content": q.content,
         "options": q.options,
         "pyq_year": q.pyq_year,
-        "attempt_id": attempt_id
+        "attempt_id": attempt_id,
+        "subject_name": sub_name,
+        "question_number": questions_answered + 1,
+        "total_questions": max_q
     }
 
 
@@ -435,6 +503,31 @@ def reset_progress(user_id: int = 1, db: Session = Depends(get_db)):
     
     db.commit()
     return {"message": "Progress reset successfully"}
+
+# 3.6 PDF Quiz Generation
+from fastapi import File, UploadFile
+
+@app.post("/quiz/generate-from-pdf")
+async def generate_pdf_quiz(
+    file: UploadFile = File(...),
+    num_questions: int = 5
+):
+    """
+    Uploads a PDF, extracts text, and generates a quiz.
+    Returns the quiz JSON directly.
+    """
+    if not file.filename.endswith('.pdf'):
+        raise HTTPException(status_code=400, detail="Invalid file type. Only PDF allowed.")
+    
+    content = await file.read()
+    text = pdf_quiz.extract_text_from_pdf(content)
+    
+    if len(text.strip()) == 0:
+        raise HTTPException(status_code=400, detail="Could not extract text from PDF.")
+        
+    questions = pdf_quiz.generate_quiz_from_text(text, num_questions)
+    
+    return {"questions": questions}
 
 # 4. AI Tutor Chat
 @app.post("/chat/tutor")

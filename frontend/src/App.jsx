@@ -10,9 +10,11 @@ import ZenMode from './ZenMode';
 import StreamSelection from './StreamSelection';
 import ExamSelection from './ExamSelection';
 import SubjectSelection from './SubjectSelection';
+import TopicSelection from './TopicSelection';
 import QuizList from './QuizList';
 import Syllabus from './Syllabus';
 import Home from './Home';
+import QuizGenerator from './components/QuizGenerator';
 import { GamificationProvider } from './contexts/GamificationContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 
@@ -44,6 +46,7 @@ function App() {
 
                             <Route path="/stream/:streamId" element={<ProtectedRoute><ExamSelection /></ProtectedRoute>} />
                             <Route path="/exam/:examId" element={<ProtectedRoute><SubjectSelection /></ProtectedRoute>} />
+                            <Route path="/exam/:examId/subject/:subjectId/topics" element={<ProtectedRoute><TopicSelection /></ProtectedRoute>} />
                             <Route path="/subject/:subjectId" element={<ProtectedRoute><QuizList /></ProtectedRoute>} />
 
                             <Route path="/quiz/:quizId" element={<ProtectedRoute><Quiz /></ProtectedRoute>} />
@@ -52,6 +55,7 @@ function App() {
                             <Route path="/graph" element={<ProtectedRoute><KnowledgeGraph /></ProtectedRoute>} />
                             <Route path="/chat" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
                             <Route path="/zen" element={<ProtectedRoute><ZenMode /></ProtectedRoute>} />
+                            <Route path="/quiz/generate" element={<ProtectedRoute><QuizGenerator /></ProtectedRoute>} />
                         </Routes>
                     </div>
                 </Router>

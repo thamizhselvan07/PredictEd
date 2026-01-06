@@ -217,6 +217,22 @@ export default function Dashboard() {
                                 </div>
                             </motion.button>
                         </Link>
+
+                        <Link to="/quiz/generate">
+                            <motion.button
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                className="group bg-card/50 backdrop-blur-sm border border-white/10 px-6 py-4 rounded-xl flex items-center gap-4 hover:border-primary/50 hover:bg-primary/5 transition-all shadow-glass"
+                            >
+                                <div className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
+                                    <Zap className="h-6 w-6 text-primary" />
+                                </div>
+                                <div className="text-left">
+                                    <div className="text-xs text-muted-foreground uppercase tracking-wider font-bold">AI Tools</div>
+                                    <div className="font-bold text-lg">PDF Quiz</div>
+                                </div>
+                            </motion.button>
+                        </Link>
                     </div>
                 </motion.div>
 
