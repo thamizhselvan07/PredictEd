@@ -19,7 +19,7 @@ def test_gemini():
         models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
         print(f"Available Models: {models}")
         
-        target_model = 'gemini-2.0-flash'
+        target_model = 'gemini-3-flash-preview'
         # Check if target is in list (loose match)
         # Gemini model names often have variants like models/gemini-pro
         
@@ -34,7 +34,7 @@ def test_gemini():
              print(f"Failed with {target_model}: {e}")
              print("Retrying with 'gemini-1.5-flash'...")
              try:
-                 model = genai.GenerativeModel('gemini-1.5-flash')
+                 model = genai.GenerativeModel('gemini-3-flash-preview')
                  response = model.generate_content("Hello, are you working?")
                  print(f"Response: {response.text}")
                  print("SUCCESS: Gemini API is connected and working (fallback to 1.5-flash)!")

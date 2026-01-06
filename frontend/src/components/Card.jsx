@@ -1,5 +1,4 @@
 import React from 'react';
-// import { cn } from '@/lib/utils'; // Removed to avoid conflict
 
 function cn(...classes) {
     return classes.filter(Boolean).join(' ');
@@ -7,7 +6,7 @@ function cn(...classes) {
 
 export function Card({ className, children, ...props }) {
     return (
-        <div className={cn("rounded-xl border bg-card text-card-foreground shadow-sm", className)} {...props}>
+        <div className={cn("glass-card text-card-foreground shadow-sm hover:shadow-glow hover:border-primary/30 transition-all duration-300", className)} {...props}>
             {children}
         </div>
     );
@@ -18,7 +17,7 @@ export function CardHeader({ className, children, ...props }) {
 }
 
 export function CardTitle({ className, children, ...props }) {
-    return <h3 className={cn("font-semibold leading-none tracking-tight", className)} {...props}>{children}</h3>;
+    return <h3 className={cn("text-xl font-bold font-brand tracking-wide bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400", className)} {...props}>{children}</h3>;
 }
 
 export function CardContent({ className, children, ...props }) {

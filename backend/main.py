@@ -440,27 +440,24 @@ def reset_progress(user_id: int = 1, db: Session = Depends(get_db)):
 @app.post("/chat/tutor")
 def chat_tutor(req: ChatRequest):
     """
-    AI Tutor powered by Google Gemini.
+    AI Tutor powered by Ollama (local) or Google Gemini (cloud).
     """
     import os
-    import google.generativeai as genai
     from dotenv import load_dotenv
-
+    
     load_dotenv()
     
-    api_key = os.getenv("GEMINI_API_KEY")
-    
-    if not api_key:
-        return {"reply": "Configuration Error: AI API Key is missing. Please check .env file."}
-
+    # 1. Try Ollama First (if configured or default)
+    # We prefer Ollama for local privacy/cost if available
     try:
-        genai.configure(api_key=api_key)
-        # Use a stable model
-        model = genai.GenerativeModel('gemini-2.0-flash')
+        import ollama
+        ollama_model = os.getenv("OLLAMA_MODEL", "llama3") # Default to llama3
         
-        # Context Construction
-        context_str = f"""
-        You are an ADVANCED AI TUTOR for the 'Progress Here' platform.
+        # Check if we can connect to Ollama (simple list check or just try generate)
+        # We will try to generate directly.
+        
+        system_prompt = f"""
+        You are an ADVANCED AI TUTOR for the 'PredictEd' platform.
         
         CONTEXT:
         - Stream: {req.stream}
@@ -476,6 +473,81 @@ def chat_tutor(req: ChatRequest):
         - If the user asks a question, answer it directly.
         - If the user asks for clarity, simplify your language.
         - Stay strictly within the syllabus of the selected EXAM.
+        """
+        
+        # Combine system prompt + user message for Ollama
+        # Ollama python client supports 'messages' list
+        # Try specific model, if not found, try to list and use FIRST available
+        
+        try:
+             response = ollama.chat(model=ollama_model, messages=[
+                {
+                    'role': 'system',
+                    'content': system_prompt,
+                },
+                {
+                    'role': 'user',
+                    'content': req.message,
+                },
+            ])
+        except ollama.ResponseError as e:
+            if e.status_code == 404:
+                # Model not found, try to find ANY locally available model
+                models_info = ollama.list()
+                if models_info.get('models'):
+                    fallback_model = models_info['models'][0]['name']
+                    print(f"Model {ollama_model} not found. Falling back to {fallback_model}...")
+                    response = ollama.chat(model=fallback_model, messages=[
+                        {
+                            'role': 'system',
+                            'content': system_prompt,
+                        },
+                        {
+                            'role': 'user',
+                            'content': req.message,
+                        },
+                    ])
+                else:
+                    raise Exception("No models found in Ollama. Please run 'ollama pull llama3'")
+            else:
+                raise e
+        
+        return {"reply": response['message']['content']}
+        
+    except Exception as e_ollama:
+        print(f"Ollama Error (falling back to Gemini): {e_ollama}")
+        # If Ollama fails (e.g. not running, model not found), fall back to Gemini
+        pass
+
+    # 2. Fallback to Gemini
+    import google.generativeai as genai
+    api_key = os.getenv("GEMINI_API_KEY")
+    
+    if not api_key:
+        return {"reply": "Configuration Error: AI API Key is missing and Ollama is unavailable."}
+
+    try:
+        genai.configure(api_key=api_key)
+        # Use a stable model
+        model = genai.GenerativeModel('gemini-2.0-flash-exp')
+        
+        # Context Construction (Same as above, reused)
+        context_str = f"""
+        You are an ADVANCED AI TUTOR for the 'PredictEd' platform.
+        
+        CONTEXT:
+        - Stream: {req.stream}
+        - Exam: {req.exam}
+        - Subject: {req.subject}
+        {f"- Topic: {req.topic}" if req.topic else ""}
+        {f"- Recent Performance: {req.recent_performance}" if req.recent_performance else ""}
+        
+        INSTRUCTIONS:
+        - You are explaining concepts to a student preparing for competitive exams.
+        - Be accurate, exam-oriented, and easy to understand.
+        - Use step-by-step explanations, formulas, and examples where applicable.
+        - If the user asks a question, answer it directly.
+        - Stay strictly within the syllabus of the selected EXAM.
         
         User Question: {req.message}
         """
@@ -486,9 +558,10 @@ def chat_tutor(req: ChatRequest):
         
     except Exception as e:
         print(f"Gemini API Error: {e}")
-        response = "I'm having trouble connecting to the AI brain right now. Please try again in a moment."
         if "429" in str(e):
-             response = "I'm receiving too many requests right now. Please wait a moment and try again."
+             response = "I'm receiving too many requests on the cloud API. Please ensure **Ollama** is running locally for unlimited chat."
+        else:
+             response = f"I'm having trouble connecting to the AI brain. (Ollama: {str(e_ollama) if 'e_ollama' in locals() else 'Not attempted'}, Gemini: {str(e)})"
 
     return {"reply": response}
 

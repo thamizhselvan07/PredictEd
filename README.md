@@ -66,7 +66,7 @@ python -m uvicorn main:app --host 0.0.0.0 --port 8000
 
 ### 2. 🧠 Adaptive Branding
 - **"Orbitron" Fonts** & Neon visuals.
-- Unique "Progress Here" Identity.
+- Unique "PredictEd" Identity.
 - Day/Night Mode switcher.
 
 ### 3. 📚 Official Exam Syllabi

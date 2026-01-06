@@ -12,3 +12,4 @@ passlib[bcrypt]
 google-generativeai
 python-dotenv
 fastapi-mail
+ollama

@@ -2,9 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { signup } from './api';
 import { Button } from './components/Button';
-import { Lock, Mail, User, ArrowRight, AlertCircle, CheckCircle, RefreshCw, ArrowLeft, Globe } from 'lucide-react';
+import { Card, CardHeader, CardTitle, CardContent } from './components/Card';
+import { Lock, Mail, User, ArrowRight, AlertCircle, CheckCircle, RefreshCw, ArrowLeft, Globe, Sparkles } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { auth, signInWithGoogle } from './firebase'; // Import Google Auth
 import { createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
+import Logo from './assets/logo.png';
 
 export default function Signup() {
     const navigate = useNavigate();
@@ -117,147 +120,210 @@ export default function Signup() {
 
     return (
         <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_bottom,_var(--tw-gradient-stops))] from-primary/10 via-background to-background pointer-events-none" />
-
-            <div className="w-full max-w-md bg-card border border-border rounded-lg shadow-xl overflow-hidden relative z-10">
-                <div className="p-6 bg-secondary/20 border-b border-border text-center">
-                    <h2 className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                        {step === 1 ? "Create Account" : step === 2 ? "Verify Email" : "Setup Profile"}
-                    </h2>
-                    <p className="text-muted-foreground text-sm mt-1">
-                        {step === 1 ? "Join the elite learning platform." :
-                            step === 2 ? "We sent a verification link to your email." :
-                                "Choose your unique username."}
-                    </p>
-                </div>
-
-                <div className="p-6 space-y-6">
-                    {error && (
-                        <div className="p-3 bg-red-500/10 border border-red-500/50 rounded flex items-center gap-3 text-red-500 text-sm animate-shake">
-                            <AlertCircle size={16} />
-                            <span>{error}</span>
-                        </div>
-                    )}
-
-                    {/* Step 1: Firebase Signup */}
-                    {step === 1 && (
-                        <div className="space-y-4">
-                            <form onSubmit={handleFirebaseSignup} className="space-y-4">
-                                <div className="space-y-2">
-                                    <label className="text-xs uppercase tracking-wider text-muted-foreground font-semibold ml-1">Email</label>
-                                    <div className="relative group">
-                                        <Mail className="absolute left-3 top-3 text-muted-foreground group-focus-within:text-primary transition-colors" size={18} />
-                                        <input
-                                            type="email"
-                                            required
-                                            className="w-full bg-secondary/50 border border-input rounded-md py-2.5 pl-10 pr-4 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all text-foreground placeholder:text-muted-foreground/50"
-                                            placeholder="student@example.com"
-                                            value={email}
-                                            onChange={(e) => setEmail(e.target.value)}
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="space-y-2">
-                                    <label className="text-xs uppercase tracking-wider text-muted-foreground font-semibold ml-1">Password</label>
-                                    <div className="relative group">
-                                        <Lock className="absolute left-3 top-3 text-muted-foreground group-focus-within:text-primary transition-colors" size={18} />
-                                        <input
-                                            type="password"
-                                            required
-                                            minLength={6}
-                                            className="w-full bg-secondary/50 border border-input rounded-md py-2.5 pl-10 pr-4 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all text-foreground placeholder:text-muted-foreground/50"
-                                            placeholder="Minimum 6 characters"
-                                            value={password}
-                                            onChange={(e) => setPassword(e.target.value)}
-                                        />
-                                    </div>
-                                </div>
-
-                                <Button type="submit" className="w-full" disabled={loading}>
-                                    {loading ? "Creating Account..." : "Continue"} <ArrowRight size={18} className="ml-2" />
-                                </Button>
-                            </form>
-
-                            <div className="relative">
-                                <div className="absolute inset-0 flex items-center">
-                                    <span className="w-full border-t border-muted"></span>
-                                </div>
-                                <div className="relative flex justify-center text-xs uppercase">
-                                    <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
-                                </div>
-                            </div>
-
-                            <Button
-                                type="button"
-                                variant="outline"
-                                onClick={handleGoogleSignup}
-                                disabled={loading}
-                                className="w-full"
-                            >
-                                <Globe size={18} className="mr-2" /> Google
-                            </Button>
-                        </div>
-                    )}
-
-                    {/* Step 2: Verification Wait */}
-                    {step === 2 && (
-                        <div className="text-center space-y-6">
-                            <div className="mx-auto w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center animate-pulse">
-                                <Mail className="text-primary" size={32} />
-                            </div>
-
-                            <div className="space-y-2">
-                                <p className="text-foreground">Please check <strong>{email}</strong></p>
-                                <p className="text-muted-foreground text-sm">
-                                    Click the link in the email we just sent you. This window will update automatically once verified.
-                                </p>
-                            </div>
-
-                            <div className="pt-4 flex flex-col gap-3">
-                                <Button variant="outline" onClick={handleResend} disabled={loading} className="w-full">
-                                    <RefreshCw size={16} className={`mr-2 ${loading ? 'animate-spin' : ''}`} /> Resend Link
-                                </Button>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Step 3: Backend Profile */}
-                    {step === 3 && (
-                        <form onSubmit={handleCompleteSignup} className="space-y-4">
-                            <div className="flex items-center gap-2 p-3 bg-green-500/10 border border-green-500/20 rounded mb-4 text-green-500 text-sm">
-                                <CheckCircle size={16} />
-                                <span>{password ? "Email Verified Successfully!" : "Authenticated via Google"}</span>
-                            </div>
-
-                            <div className="space-y-2">
-                                <label className="text-xs uppercase tracking-wider text-muted-foreground font-semibold ml-1">Choose Username</label>
-                                <div className="relative group">
-                                    <User className="absolute left-3 top-3 text-muted-foreground group-focus-within:text-primary transition-colors" size={18} />
-                                    <input
-                                        type="text"
-                                        required
-                                        className="w-full bg-secondary/50 border border-input rounded-md py-2.5 pl-10 pr-4 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all text-foreground placeholder:text-muted-foreground/50"
-                                        placeholder="unique_username"
-                                        value={username}
-                                        onChange={(e) => setUsername(e.target.value)}
-                                    />
-                                </div>
-                            </div>
-
-                            <Button type="submit" className="w-full" disabled={loading}>
-                                {loading ? "Creating Profile..." : "Create Profile"} <ArrowRight size={18} className="ml-2" />
-                            </Button>
-                        </form>
-                    )}
-                </div>
-
-                <div className="p-4 bg-secondary/10 border-t border-border flex justify-between items-center text-sm">
-                    <Link to="/" className="text-muted-foreground hover:text-primary flex items-center">
-                        <ArrowLeft size={16} className="mr-1" /> Back to Login
-                    </Link>
-                </div>
+            {/* Ambient Background Effects */}
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full overflow-hidden pointer-events-none z-0">
+                <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-primary/20 rounded-full blur-[128px] animate-pulse-slow opacity-30" />
+                <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-secondary/20 rounded-full blur-[128px] animate-float opacity-30" />
+                <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 brightness-100 contrast-150"></div>
             </div>
+
+            <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6 }}
+                className="w-full max-w-md relative z-10"
+            >
+                <Card className="glass-card border-primary/20 shadow-glow-lg backdrop-blur-2xl">
+                    <CardHeader className="space-y-4 text-center pb-8 border-b border-white/5">
+                        <div className="mx-auto w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-secondary p-0.5 shadow-glow mb-2">
+                            <div className="w-full h-full bg-background/90 rounded-2xl flex items-center justify-center backdrop-blur-xl">
+                                <img src={Logo} alt="PredictEd" className="h-10 w-10 object-contain mix-blend-screen" />
+                            </div>
+                        </div>
+                        <div>
+                            <CardTitle className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary via-white to-secondary pb-1 block">
+                                {step === 1 ? "Start Your Journey" : step === 2 ? "Verify Identity" : "Finalize Profile"}
+                            </CardTitle>
+                            <p className="text-muted-foreground mt-2 text-xs uppercase tracking-wider">
+                                {step === 1 ? "Join the elite learning platform" :
+                                    step === 2 ? "Security Check Required" :
+                                        "Claim your unique handle"}
+                            </p>
+                        </div>
+                    </CardHeader>
+
+                    <CardContent className="space-y-6 pt-6">
+                        {error && (
+                            <motion.div
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: 'auto' }}
+                                className="p-3 rounded-lg bg-error/10 border border-error/50 text-error text-sm flex items-center gap-2"
+                            >
+                                <AlertCircle className="h-4 w-4 shrink-0" />
+                                {error}
+                            </motion.div>
+                        )}
+
+                        <AnimatePresence mode="wait">
+                            {/* Step 1: Firebase Signup */}
+                            {step === 1 && (
+                                <motion.div
+                                    key="step1"
+                                    initial={{ opacity: 0, x: -20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: 20 }}
+                                    className="space-y-4"
+                                >
+                                    <form onSubmit={handleFirebaseSignup} className="space-y-4">
+                                        <div className="space-y-2">
+                                            <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground ml-1">Email Address</label>
+                                            <div className="relative group">
+                                                <Mail className="absolute left-3 top-3 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                                                <input
+                                                    type="email"
+                                                    required
+                                                    className="w-full h-11 pl-10 bg-black/20 border border-white/10 rounded-lg focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all outline-none text-foreground placeholder:text-muted-foreground/50"
+                                                    placeholder="student@example.com"
+                                                    value={email}
+                                                    onChange={(e) => setEmail(e.target.value)}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground ml-1">Set Password</label>
+                                            <div className="relative group">
+                                                <Lock className="absolute left-3 top-3 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                                                <input
+                                                    type="password"
+                                                    required
+                                                    minLength={6}
+                                                    className="w-full h-11 pl-10 bg-black/20 border border-white/10 rounded-lg focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all outline-none text-foreground placeholder:text-muted-foreground/50"
+                                                    placeholder="Minimum 6 characters"
+                                                    value={password}
+                                                    onChange={(e) => setPassword(e.target.value)}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <Button
+                                            type="submit"
+                                            disabled={loading}
+                                            className="w-full h-12 text-lg shadow-glow hover:shadow-glow-lg transition-all"
+                                        >
+                                            {loading ? "Initializing..." : "Create Account"}
+                                            {!loading && <ArrowRight className="ml-2 h-5 w-5" />}
+                                        </Button>
+                                    </form>
+
+                                    <div className="relative my-6">
+                                        <div className="absolute inset-0 flex items-center">
+                                            <span className="w-full border-t border-white/10" />
+                                        </div>
+                                        <div className="relative flex justify-center text-xs uppercase">
+                                            <span className="bg-background px-2 text-muted-foreground rounded-full border border-white/10">Or continue with</span>
+                                        </div>
+                                    </div>
+
+                                    <button
+                                        type="button"
+                                        onClick={handleGoogleSignup}
+                                        disabled={loading}
+                                        className="w-full h-12 bg-white text-black hover:bg-gray-100 font-bold rounded-lg flex items-center justify-center gap-3 transition-all transform hover:scale-[1.02] shadow-lg disabled:opacity-70 disabled:hover:scale-100"
+                                    >
+                                        <Globe className="h-5 w-5" />
+                                        Google Account
+                                    </button>
+                                </motion.div>
+                            )}
+
+                            {/* Step 2: Verification Wait */}
+                            {step === 2 && (
+                                <motion.div
+                                    key="step2"
+                                    initial={{ opacity: 0, scale: 0.95 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    className="text-center space-y-6 py-4"
+                                >
+                                    <div className="mx-auto w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center relative">
+                                        <div className="absolute inset-0 rounded-full border border-primary/30 animate-ping" />
+                                        <Mail className="text-primary h-10 w-10 relative z-10" />
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <p className="text-foreground text-lg font-medium">Verification Link Sent</p>
+                                        <p className="text-muted-foreground text-sm">
+                                            We sent a distinct quantum link to <br /><span className="text-primary font-mono">{email}</span>
+                                        </p>
+                                    </div>
+
+                                    <div className="bg-white/5 border border-white/10 rounded-lg p-4 text-xs text-muted-foreground">
+                                        <p className="mb-2">Click the link in your email to proceed.</p>
+                                        <p>This window will update automatically once verified.</p>
+                                    </div>
+
+                                    <Button
+                                        variant="outline"
+                                        onClick={handleResend}
+                                        disabled={loading}
+                                        className="w-full border-primary/20 hover:bg-primary/10 hover:text-primary"
+                                    >
+                                        <RefreshCw size={16} className={`mr-2 ${loading ? 'animate-spin' : ''}`} /> Resend Verification
+                                    </Button>
+                                </motion.div>
+                            )}
+
+                            {/* Step 3: Backend Profile */}
+                            {step === 3 && (
+                                <motion.div
+                                    key="step3"
+                                    initial={{ opacity: 0, x: 20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    className="space-y-6"
+                                >
+                                    <div className="flex items-center gap-3 p-4 bg-success/10 border border-success/20 rounded-xl text-success text-sm font-medium">
+                                        <CheckCircle size={20} className="shrink-0" />
+                                        <span>{password ? "Identity Verified Successfully" : "Authenticated via Google Secure Auth"}</span>
+                                    </div>
+
+                                    <form onSubmit={handleCompleteSignup} className="space-y-4">
+                                        <div className="space-y-2">
+                                            <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground ml-1">Choose Username</label>
+                                            <div className="relative group">
+                                                <User className="absolute left-3 top-3 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                                                <input
+                                                    type="text"
+                                                    required
+                                                    className="w-full h-11 pl-10 bg-black/20 border border-white/10 rounded-lg focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all outline-none text-foreground placeholder:text-muted-foreground/50"
+                                                    placeholder="unique_handle"
+                                                    value={username}
+                                                    onChange={(e) => setUsername(e.target.value)}
+                                                />
+                                            </div>
+                                            <p className="text-[10px] text-muted-foreground ml-1">This will be your display name on the leaderboard.</p>
+                                        </div>
+
+                                        <Button
+                                            type="submit"
+                                            disabled={loading}
+                                            className="w-full h-12 text-lg shadow-glow hover:shadow-glow-lg transition-all"
+                                        >
+                                            {loading ? "Finalizing..." : "Complete Setup"}
+                                            {!loading && <ArrowRight className="ml-2 h-5 w-5" />}
+                                        </Button>
+                                    </form>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </CardContent>
+
+                    <div className="p-4 border-t border-white/5 bg-black/20 flex justify-center">
+                        <Link to="/" className="text-sm text-muted-foreground hover:text-primary flex items-center transition-colors font-medium">
+                            <ArrowLeft size={16} className="mr-2" /> Back to Login
+                        </Link>
+                    </div>
+                </Card>
+            </motion.div>
         </div>
     );
 }
