@@ -88,9 +88,46 @@ def generate_quiz_from_text(text: str, num_questions: int = 5) -> List[Dict[str,
         return final_data[:num_questions]
         
     except Exception as e:
-        print(f"Error generating quiz with Ollama ({model_name}): {e}")
-        print(f"RAW RESPONSE: {content_text if 'content_text' in locals() else 'None'}")
-        return []
+        print(f"Ollama failed ({e}). Falling back to Gemini...")
+        
+        # FALLBACK: GEMINI
+        try:
+            import google.generativeai as genai
+            api_key = os.getenv("GEMINI_API_KEY")
+            if not api_key:
+                print("Gemini API Key missing.")
+                return []
+                
+            genai.configure(api_key=api_key)
+            model = genai.GenerativeModel('gemini-2.0-flash-exp')
+            
+            gemini_prompt = prompt + "\n\nProvide ONLY the JSON output."
+            
+            response = model.generate_content(gemini_prompt)
+            content_text = response.text
+            
+            # Clean markdown
+            if "```json" in content_text:
+                content_text = content_text.split("```json")[1].split("```")[0]
+            elif "```" in content_text:
+                 content_text = content_text.split("```")[1].split("```")[0]
+                 
+            raw_data = json.loads(content_text.strip())
+            
+            final_data = []
+            for item in raw_data:
+                final_data.append({
+                    "question": item.get("q"),
+                    "options": item.get("o", []),
+                    "correct_answer": item.get("a"),
+                    "topic": "Derived",
+                    "difficulty": 0.8
+                })
+            return final_data[:num_questions]
+            
+        except Exception as e_gemini:
+            print(f"Gemini also failed: {e_gemini}")
+            return []
 
 def save_generated_questions(db_session, user_id, questions_data, source_name="PDF Upload"):
     """
