@@ -1,256 +1,206 @@
-# 🧠 PredictEd – Intelligent Competitive Exam Learning Platform
+# ?? PredictEd � AI-Powered Personalized Learning Path Recommender
 
-<div align="center">
+PredictEd doesn't just tell students what to study � it predicts what they need to learn next and continuously rebuilds their learning path based on how they perform.
 
-![PredictEd Logo](file:///C:/Users/yuvar/.gemini/antigravity/brain/af7c8acc-8b56-44c3-b0a8-1b4a8d8d1340/progress_here_logo_1767646912701.png)
+## ?? What is PredictEd?
+PredictEd is an AI-powered adaptive learning platform designed for students preparing for competitive examinations and career-oriented skill development.
 
-![PredictEd](https://img.shields.io/badge/Status-Production_Ready-success?style=for-the-badge)
-![FastAPI](https://img.shields.io/badge/Backend-FastAPI-009688?style=for-the-badge&logo=fastapi)
-![React](https://img.shields.io/badge/Frontend-React_18-61DAFB?style=for-the-badge&logo=react)
+Traditional learning platforms provide students with:
+- Static syllabi
+- Generic recommendations
+- Fixed learning paths
+- Basic test scores
+- Generic chatbots
 
-**The AI-Powered Adaptive Learning Platform that Evolves With You**
+PredictEd takes a different approach. It continuously analyzes a student's:
+- ?? Target exam or career
+- ?? Current skill level
+- ?? Quiz and mock-test performance
+- ?? Skill gaps
+- ?? Topic prerequisites
+- ? Learning velocity
+- ? Repeated mistakes
+- ?? Performance trends
 
-[Features](#-key-features) • [Installation](#-installation) • [Usage](#-usage) • [Tech Stack](#-tech-stack)
+And uses this information to determine:
+**What should the student learn next, why they should learn it, and how their learning path should change.**
 
-</div>
+## ?? Problem Statement
+Students preparing for competitive exams often follow static syllabi and generic study plans that do not adapt to their individual strengths, weaknesses, learning pace, or performance.
 
----
+Most existing platforms answer: *"What should I study?"*
+But they often fail to answer:
+- *"What should I study next?"*
+- *"Why should I study it?"*
+- *"What am I likely to struggle with?"*
+- *"How should my learning path change after my latest test?"*
 
-## 🎯 Vision
+PredictEd addresses this gap through a closed-loop adaptive learning intelligence system.
 
-**PredictEd** transforms exam preparation from a passive activity into an intelligent, adaptive journey. By leveraging dynamic knowledge graphs and real-time difficulty adjustment, we ensure every student is always challenged just enough to grow, never enough to give up.
+## ?? Our Solution
+PredictEd creates a personalized roadmap for each learner and continuously updates it using performance feedback.
 
----
+**Core Workflow**
+```
+Student Goal ? AI Learner Profile ? Skill Assessment ? Skill Gap Detection ? Prerequisite Analysis ? Personalized Learning Path ? Next Best Action ? Learn / Practice ? Quiz / Mock Test ? AI Performance Analysis ? Predictive Weak-Topic Engine ? Dynamic Replanning ? Updated Learning Path ? Next Best Action ?
+```
+The roadmap is therefore not fixed. Every assessment becomes feedback for the intelligence layer.
 
-## 🚀 Installation & Usage
+## ?? Core Innovation
+**Learn ? Measure ? Predict ? Explain ? Replan ? Learn Again**
 
-**Prerequisites:** Node.js (v18+), Python (v3.10+)
+Unlike traditional learning platforms, PredictEd creates a closed-loop adaptive learning system.
 
-### 1. Setup Backend
+| Traditional Platform | PredictEd |
+| :--- | :--- |
+| Static syllabus | Dynamic learning path |
+| Generic recommendations | Personalized recommendations |
+| Shows test score | Analyzes why the score happened |
+| Detects weak topics | Predicts future weak topics |
+| Fixed roadmap | Self-replanning roadmap |
+| Generic chatbot | Context-aware AI Tutor |
+| "Study Chapter 5" | "Study this next, because..." |
+| Completion percentage | Goal ETA + Learning Velocity |
+| Tests measure progress | Tests actively change the learning path |
+
+## ? Key Features
+
+### 1. ?? AI-Powered Learner Profiling
+Students describe their goal and current knowledge in natural language. PredictEd structures this into a learner profile containing the target career, strengths, skill gaps, and learning pace.
+
+### 2. ?? Personalized Learning Path
+PredictEd generates a roadmap based on the student's actual skill level instead of forcing every learner through the same syllabus, integrating prerequisite dependencies and locked/unlocked topic states.
+
+### 3. ?? Next Best Action Engine
+PredictEd continuously determines the single most useful action for the student based on skill mastery, recent quiz performance, prerequisites, and learning velocity.
+
+### 4. ?? Adaptive Mock Tests
+PredictEd goes beyond static question papers by generating AI-powered adaptive mocks that dynamically target areas where the student needs more practice.
+
+### 5. ?? AI Mock-Test Analysis
+PredictEd doesn't stop at displaying a score. After a test, it analyzes performance at the skill and topic level and identifies learning trends.
+
+### 6. ?? Predictive Weak-Topic Engine
+PredictEd attempts to go one step further by predicting future bottlenecks. For example: *"You have a high probability of struggling with PCA because your Linear Algebra and Eigenvalue mastery are currently low."*
+
+### 7. ?? Dynamic Learning Path Replanning
+This is the heart of PredictEd. If a student performs poorly in an area, the AI automatically transforms the roadmap to add reinforcement modules and targeted practice before allowing them to advance.
+
+### 8. ? "Why This?" Explainable AI
+Every important recommendation should be understandable. The AI explains *why* a topic is in your path based on your current mastery and prerequisite requirements.
+
+### 9. ??? AI Knowledge Graph
+PredictEd represents relationships visually between: `Goal ? Skill ? Subskill ? Prerequisite`. The graph highlights Mastered, In Progress, Needs Attention, and AI Recommended bottlenecks.
+
+### 10. ?? Context-Aware AI Tutor
+PredictEd's AI Tutor is designed to understand the learner's journey. It uses context such as target goals, learning roadmaps, and recent test performance to provide highly contextualized answers.
+
+### 11. ?? Roadmap Intelligence
+The dashboard tracks Learning Velocity, Goal ETA, Path Health, Predicted Failure Risk, and Skill Mastery.
+
+### 12. ?? Intelligent Home Dashboard
+The dashboard acts as an AI command center, highlighting the **NEXT BEST ACTION** and **AI PREDICTION** instead of a simple "Resume Course" button.
+
+### 13. ?? Gamification
+PredictEd connects learning improvement with gamification through XP, Levels, Daily streaks, and achievement badges that reward actual improvement.
+
+### 14. ?? Learning Path Adjustment Notifications
+When the AI changes a student's roadmap, PredictEd makes the change transparently visible through alert modules.
+
+## ??? System Architecture
+```
++--------------------------------------+
+�                STUDENT               �
+�        Goal � Activity � Tests       �
++--------------------------------------+
+                   ?
++--------------------------------------+
+�             REACT FRONTEND           �
+�  Dashboard � Roadmap � Quiz � Tutor  �
++--------------------------------------+
+                   ?
++--------------------------------------+
+�               FASTAPI                �
+�          Application Layer           �
++--------------------------------------+
+                   ?
++-----------+-----------+
+?           ?           ?
++------------+ +----------+ +--------------+
+� Knowledge  � �Predictive� �  Adaptive    �
+�   Graph    � � Weakness � �  Difficulty  �
+�   Engine   � �  Engine  � �    Engine    �
++------------+ +----------+ +--------------+
+      +-------------+--------------+
+                    ?
+           +--------------------+
+           �   Learning Path    �
+           � Replanning Engine  �
+           +--------------------+
+                      ?
+           +--------------------+
+           �  Next Best Action  �
+           +--------------------+
+                      ?
+                   STUDENT ?
+```
+
+## ??? Tech Stack
+**Frontend**: React, Vite, Tailwind CSS, Framer Motion, Recharts, Lucide React, Axios, React Router  
+**Backend**: FastAPI, Python, SQLAlchemy, SQLite, Pydantic, Uvicorn, Google Gemini (AI Layer)
+
+## ?? Installation
+
+**Prerequisites:** Node.js 18+, Python 3.10+, Git
+
+**1. Clone the Repository**
+```bash
+git clone https://github.com/thamizhselvan07/PredictEd.git
+cd PredictEd
+```
+
+**2. Setup Backend**
 ```bash
 cd backend
 pip install -r requirements.txt
-python seed_exams.py  # Seeds official exam hierarchy (JEE, NEET, etc.)
-python -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload
-```
 
-### 2. Setup Frontend (Development)
+# Seed the database and start the server
+python -m uvicorn main:app --host 0.0.0.0 --port 8000
+```
+*Note: Make sure to set up your `.env` file with `GEMINI_API_KEY` for the AI features to work.*
+
+**3. Setup Frontend (Development)**
 ```bash
 cd frontend
 npm install
 npm run dev
-# Access at http://localhost:5173
 ```
 
-### 3. Production Build (Single Port Serving)
-To run the full application (Frontend + Backend) on a single port:
-
+**?? Production Build**
+To serve everything together seamlessly through FastAPI:
 ```bash
-# 1. Build Frontend
 cd frontend
 npm run build
-
-# 2. Run Backend (which serves the built frontend)
 cd ../backend
 python -m uvicorn main:app --host 0.0.0.0 --port 8000
 ```
-> **Access the App:** Open `http://localhost:8000`
+Access the application through: `http://localhost:8000`
 
----
+## ?? UI / UX
+PredictEd uses a modern futuristic learning interface designed around clarity, engagement, and adaptive intelligence. (Dark-first interface, Glassmorphism, Smooth animations).
 
-## ✨ Key Features
-### 1. 🎯 Dynamic Knowledge Graph
-- Visualizes topic mastery in real-time.
-- **Star Topology** with "Brain" node.
-- Interactive radial clustering of subjects.
+## ?? Hackathon Value Proposition
+PredictEd addresses a major limitation in digital education: Learning platforms are good at delivering content, but they are not always good at deciding what an individual learner needs next.
 
-### 2. 🧠 Adaptive Branding
-- **"Orbitron" Fonts** & Neon visuals.
-- Unique "PredictEd" Identity.
-- Day/Night Mode switcher.
+It answers five critical questions:
+1. Where am I? 
+2. What am I weak at?
+3. What am I likely to struggle with?
+4. What should I do next?
+5. Why should I do it?
 
-### 3. 📚 Official Exam Syllabi
-- **Comprehensive Data**: JEE, NEET, CLAT, UPSC, etc.
-- **Visual Roadmap**: Track progress per topic.
+## ?? Team
+Built with ?? by a team passionate about Artificial Intelligence, Education Technology, Personalized Learning, and Adaptive Systems.
 
-### 4. 🎮 Gamification
-- **XP System**, Levels, and Badges.
-- **Daily Streak** tracking.
-- **Leaderboards** to compete with peers.
-
----
-
-## 🛠️ Tech Stack
-
-### Frontend (Modern & High-Performance)
-| Technology | Purpose | Version |
-|------------|---------|---------|
-| **React** | UI Framework | 18.2+ |
-| **Vite** | Build Tool | 5.0+ |
-| **Tailwind CSS** | Styling | 3.3+ |
-| **Framer Motion** | Animations | 10.16+ |
-| **Recharts** | Data Visualization | 2.10+ |
-| **Chart.js** | Additional Charts | 4.4+ |
-| **Lucide React** | Icons | Latest |
-| **Axios** | HTTP Client | 1.6+ |
-| **React Router** | Navigation | 6.20+ |
-
-### Backend (Scalable & Modular)
-| Technology | Purpose | Version |
-|------------|---------|---------|
-| **FastAPI** | Web Framework | Latest |
-| **SQLAlchemy** | ORM | Latest |
-| **SQLite** | Database (upgradeable to PostgreSQL) | Default |
-| **Pydantic** | Data Validation | Latest |
-| **Uvicorn** | ASGI Server | Latest |
-
-### AI & Intelligence Layer
-- **Knowledge Graph Engine** (Dictionary-based, Neo4j-ready)
-- **Predictive Weak-Topic Model** (Heuristic-based)
-- **Adaptive Difficulty Engine** (Zone of Proximal Development)
-- **Behavioral Analysis** (Response time & pattern tracking)
-
----
-
-## 📁 Project Structure
-
-```
-adaptive-exam-ai/
-│
-├── backend/
-│   ├── main.py                 # FastAPI app & endpoints
-│   ├── database.py             # Database configuration
-│   ├── models.py               # SQLAlchemy models
-│   ├── knowledge_graph.py      # Knowledge graph logic
-│   ├── predictor.py            # Weak-area prediction
-│   ├── question_generator.py   # Adaptive question selection
-│   ├── analytics.py            # Analytics calculations
-│   └── requirements.txt        # Python dependencies
-│
-├── frontend/
-│   ├── src/
-│   │   ├── components/         # Reusable UI components
-│   │   │   ├── Button.jsx
-│   │   │   ├── Card.jsx
-│   │   │   ├── StatCard.jsx
-│   │   │   ├── ProgressBar.jsx
-│   │   │   ├── Badge.jsx
-│   │   │   ├── LoadingSpinner.jsx
-│   │   │   └── Navbar.jsx
-│   │   ├── App.jsx             # Main app component
-│   │   ├── Landing.jsx         # Landing page
-│   │   ├── Dashboard.jsx       # Analytics dashboard
-│   │   ├── Quiz.jsx            # Adaptive quiz interface
-│   │   ├── KnowledgeGraph.jsx  # Graph visualization
-│   │   ├── Chat.jsx            # AI Tutor chat
-│   │   ├── api.js              # API client
-│   │   ├── index.css           # Global styles
-│   │   └── main.jsx            # Entry point
-│   ├── tailwind.config.js      # Tailwind configuration
-│   ├── vite.config.js          # Vite configuration
-│   └── package.json            # Frontend dependencies
-│
-└── README.md                   # This file
-```
-
----
-
-## 🎨 UI/UX Design Philosophy
-
-### Design Principles
-1. **Dark-First Aesthetic** - Modern, eye-friendly dark theme
-2. **Glassmorphism** - Frosted glass effects for depth
-3. **Smooth Animations** - Framer Motion for delightful interactions
-4. **Information Hierarchy** - Clear visual structure
-5. **Minimal Clutter** - Focus on what matters
-6. **Responsive Design** - Mobile-first approach
-
-### Color Palette
-```css
-Primary: #2D68C4 (Smart Blue - Intelligence)
-Accent: #0000B8 (True Azure - Mystery)
-Secondary: #004953 (Dark Teal - Sophistication)
-Background: #0A0E1A (Carbon Black - Depth)
-Success: #10B981 (Emerald)
-Warning: #F59E0B (Amber)
-Error: #EF4444 (Rose)
-```
-
-### Typography
-- **Primary Font**: Inter (Clean, professional)
-- **Mono Font**: JetBrains Mono (Code/data display)
-
----
-
-## 🔮 Future Enhancements
-
-### Phase 2 Features
-- [ ] **OpenAI Integration** for advanced AI tutor
-- [ ] **Neo4j Integration** for graph database
-- [ ] **Multi-user Authentication** with JWT
-- [ ] **Progress Report PDFs** generation
-- [ ] **Email Notifications** for milestones
-- [ ] **Mobile App** (React Native)
-
-### Phase 3 Features
-- [ ] **Collaborative Learning** (study groups)
-- [ ] **Gamification** (badges, leaderboards)
-- [ ] **Video Explanations** for wrong answers
-- [ ] **Speech-to-Text** for accessibility
-- [ ] **Multi-language Support**
-- [ ] **Integration with LMS** platforms
-
----
-
-## 📊 Performance Metrics
-
-### Current Capabilities
-- ⚡ **Sub-200ms** API response times
-- 📈 **Real-time** knowledge graph updates
-- 🎯 **95%+ accuracy** in difficulty adaptation
-- 💾 **Lightweight** SQLite database (<10MB)
-- 🚀 **Instant** frontend rendering with Vite
-
----
-
-## 🤝 Contributing
-
-We welcome contributions! Please follow these steps:
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
----
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
-
-## 👥 Team
-
-Built with ❤️ by developers passionate about education technology and AI.
-
----
-
-## 🙏 Acknowledgments
-
-- **FastAPI** - For the incredible web framework
-- **React Team** - For the amazing frontend library
-- **Tailwind CSS** - For the utility-first CSS framework
-- **Framer Motion** - For smooth animations
-- **Recharts** - For beautiful data visualizations
-
----
-
-<div align="center">
-
-**Made with 🧠 and ⚡ | PredictEd**
-
-[⬆ Back to Top](#-predicted--intelligent-competitive-exam-learning-platform)
-
-</div>
+**Don't just study harder. Know what to learn next.**  
+*Learn ? Measure ? Predict ? Explain ? Replan ? Learn Again*
