@@ -14,6 +14,8 @@ import pdf_quiz
 from pydantic import EmailStr
 import os
 from dotenv import load_dotenv
+from ai_routes import router as ai_router
+from mock_routes import router as mock_router
 
 load_dotenv()
 
@@ -21,6 +23,8 @@ load_dotenv()
 models.Base.metadata.create_all(bind=database.engine)
 
 app = FastAPI(title="PredictEd")
+app.include_router(ai_router)
+app.include_router(mock_router)
 
 # CORS
 app.add_middleware(
@@ -58,6 +62,7 @@ class ChatRequest(BaseModel):
     exam: Optional[str] = "General"
     subject: Optional[str] = "General"
     topic: Optional[str] = None
+    user_id: Optional[int] = 1
     recent_performance: Optional[str] = None
 
 class SignupRequest(BaseModel):
@@ -191,6 +196,7 @@ class StartQuizRequest(BaseModel):
     subject_id: int
     type: str # 'basics', 'concept', 'mixed', 'full'
     topic: Optional[str] = None
+    user_id: Optional[int] = 1
     mode: Optional[str] = "practice" # 'practice', 'topic_mock', 'final_mock'
 
 @app.post("/quiz/start")
@@ -531,7 +537,7 @@ async def generate_pdf_quiz(
 
 # 4. AI Tutor Chat
 @app.post("/chat/tutor")
-def chat_tutor(req: ChatRequest):
+def chat_tutor(req: ChatRequest, db: Session = Depends(get_db)):
     """
     AI Tutor powered by Ollama (local) or Google Gemini (cloud).
     """
@@ -622,10 +628,14 @@ def chat_tutor(req: ChatRequest):
     try:
         genai.configure(api_key=api_key)
         # Use a stable model
-        model = genai.GenerativeModel('gemini-2.0-flash-exp')
+        model = genai.GenerativeModel('gemini-3-flash-preview')
         
         # Context Construction (Same as above, reused)
-        context_str = f"""
+        # Fetch profile context
+        profile = db.query(models.LearnerProfile).filter(models.LearnerProfile.user_id == req.user_id).first()
+        goal_context = f"The user's goal is to become a {profile.target_career}. They are struggling with {profile.skill_gaps}. Their NEXT BEST ACTION is 'Linear Algebra Fundamentals' because their latest adaptive mock test showed a drop in mastery to 34%." if profile else ""
+        context_str = f""" {goal_context}
+
         You are an ADVANCED AI TUTOR for the 'PredictEd' platform.
         
         CONTEXT:
@@ -678,7 +688,7 @@ if os.path.exists(frontend_dist):
     @app.get("/{full_path:path}")
     async def serve_react_app(full_path: str):
         # 1. API Guard: Don't serve HTML for missing API endpoints
-        if full_path.startswith(("api", "chat", "quiz", "streams", "exams", "subjects", "dashboard", "auth")):
+        if full_path.startswith("api/"): 
             raise HTTPException(status_code=404, detail="API Endpoint not found")
         
         # 2. Serve static files if they exist (e.g., favicon.ico, manifest.json)

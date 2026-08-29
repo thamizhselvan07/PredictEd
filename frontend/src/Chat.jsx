@@ -18,10 +18,11 @@ export default function Chat() {
     const bottomRef = useRef(null);
 
     const quickSuggestions = [
-        "Explain React Hooks",
-        "What is a Knowledge Graph?",
-        "Help with JavaScript closures",
-        "Adaptive learning benefits"
+        "Explain My Weakest Topic",
+        "Why Is This In My Path?",
+        "Prepare Me For My Next Test",
+        "Explain My Last Mistake",
+        "What Should I Learn Next?"
     ];
 
     useEffect(() => {
@@ -44,7 +45,8 @@ export default function Chat() {
                 stream: savedContext.stream || "General",
                 exam: savedContext.exam || "General",
                 subject: savedContext.subject || "General",
-                topic: savedContext.topic || null
+                topic: savedContext.topic || null,
+                user_id: 1
             });
             setTimeout(() => {
                 setMessages([...newMsgs, { role: 'bot', content: res.data.reply }]);

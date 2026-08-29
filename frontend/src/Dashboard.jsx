@@ -238,6 +238,33 @@ export default function Dashboard() {
                     </div>
                 </motion.div>
 
+                {/* ROADMAP INTELLIGENCE */}
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-8 bg-surface/50 border border-primary/30 rounded-2xl p-6 backdrop-blur-sm">
+                    <h2 className="text-2xl font-bold font-orbitron text-primary mb-6 flex items-center"><span className="mr-3">??</span> ROADMAP INTELLIGENCE</h2>
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
+                        <div>
+                            <div className="text-sm text-muted-foreground uppercase tracking-wider mb-2">Path Health</div>
+                            <div className="text-xl font-bold text-success">82%</div>
+                        </div>
+                        <div>
+                            <div className="text-sm text-muted-foreground uppercase tracking-wider mb-2">Learning Velocity</div>
+                            <div className="text-xl font-bold text-primary">+14% / week</div>
+                        </div>
+                        <div>
+                            <div className="text-sm text-muted-foreground uppercase tracking-wider mb-2">Goal ETA</div>
+                            <div className="text-xl font-bold text-foreground">42 Days</div>
+                        </div>
+                        <div>
+                            <div className="text-sm text-muted-foreground uppercase tracking-wider mb-2">Skill Gaps</div>
+                            <div className="text-xl font-bold text-warning" style={{color: '#f59e0b'}}>4</div>
+                        </div>
+                        <div>
+                            <div className="text-sm text-muted-foreground uppercase tracking-wider mb-2">Predicted Risk</div>
+                            <div className="text-xl font-bold text-destructive" style={{color: '#ef4444'}}>68%</div>
+                        </div>
+                    </div>
+                </motion.div>
+                
                 {/* Stats Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     <StatCard
@@ -433,3 +460,4 @@ export default function Dashboard() {
         </div>
     );
 }
+

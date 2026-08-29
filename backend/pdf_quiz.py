@@ -99,7 +99,7 @@ def generate_quiz_from_text(text: str, num_questions: int = 5) -> List[Dict[str,
                 return []
                 
             genai.configure(api_key=api_key)
-            model = genai.GenerativeModel('gemini-2.0-flash-exp')
+            model = genai.GenerativeModel('gemini-3-flash-preview')
             
             gemini_prompt = prompt + "\n\nProvide ONLY the JSON output."
             

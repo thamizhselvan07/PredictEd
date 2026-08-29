@@ -71,42 +71,50 @@ export default function Home() {
                     animate={{ opacity: 1, y: 0 }}
                     className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-primary/10 via-background/50 to-secondary/10 border border-white/10 p-8 md:p-12 glass-card backdrop-blur-md"
                 >
-                    <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-10 mix-blend-overlay"></div>
+                    
                     <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
-                        <div className="space-y-6 max-w-2xl">
-                            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-bold font-brand uppercase tracking-wider shadow-glow">
-                                <img src={Logo} alt="Logo" className="w-4 h-4" /> PredictEd AI
+                        <div className="w-full md:w-2/3 space-y-6 z-10">
+                            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20">
+                                <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                                <span className="text-xs font-semibold text-primary uppercase tracking-wider">AI Engine Active</span>
                             </div>
-                            <h1 className="text-4xl md:text-6xl font-bold tracking-tight font-brand">
-                                Welcome back,<br />
-                                <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-cyan-300 to-secondary animate-pulse-slow">Champion!</span>
+                            <h1 className="text-3xl md:text-5xl font-bold tracking-tight font-brand">
+                                Welcome back, <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-cyan-300 to-secondary animate-pulse-slow">Demo</span>
                             </h1>
-                            <p className="text-lg text-muted-foreground leading-relaxed">
-                                Your adaptive learning engine is calibrated. Track your milestones, compete with peers, and conquer your exams with AI precision.
-                            </p>
-                            <div className="flex gap-4 pt-2">
-                                <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="px-6 py-3 bg-primary text-black font-bold rounded-xl shadow-glow hover:bg-primary-dark transition-colors">
-                                    Resume Learning
-                                </motion.button>
-                            </div>
-                        </div>
-                        {/* Hero Illustration Placeholder */}
-                        <div className="w-full md:w-1/3 flex justify-center perspective-1000">
-                            <motion.div
-                                animate={{ rotate: [3, -3, 3], y: [0, -10, 0] }}
-                                transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-                                className="relative w-56 h-56"
-                            >
-                                <div className="absolute inset-0 bg-primary/30 blur-[60px] rounded-full animate-pulse" />
-                                <div className="relative bg-black/40 border border-white/10 p-6 rounded-3xl shadow-2xl backdrop-blur-xl">
-                                    <Target className="w-20 h-20 text-primary mx-auto mb-4" />
-                                    <div className="text-center font-bold text-2xl mb-1">Daily Goal</div>
-                                    <div className="w-full bg-white/10 rounded-full h-2 mb-2 overflow-hidden">
-                                        <div className="bg-primary h-full w-[85%] rounded-full shadow-[0_0_10px_rgba(6,182,212,0.8)]"></div>
+                            
+                            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 pt-4">
+                                <div className="bg-surface/50 border border-primary/30 rounded-2xl p-6 backdrop-blur-sm shadow-[0_0_15px_rgba(0,240,255,0.1)]">
+                                    <h2 className="text-lg font-bold font-orbitron text-primary mb-2">NEXT BEST ACTION</h2>
+                                    <h3 className="text-xl font-bold mb-2">Linear Algebra Fundamentals</h3>
+                                    <p className="text-sm text-muted-foreground mb-4">"Your last two assessments indicate a high probability of failure in this prerequisite topic."</p>
+                                    <div className="flex items-center gap-4 text-sm font-bold text-foreground/80 mb-6">
+                                        <div className="flex items-center gap-1 text-success"><span>↑</span> +12% mastery</div>
+                                        <div className="flex items-center gap-1"><span>⏱</span> 18 min</div>
                                     </div>
-                                    <div className="text-center text-sm text-primary font-mono">85% Complete</div>
+                                    <div className="flex gap-3">
+                                        <button className="flex-1 py-2 bg-primary text-primary-foreground font-bold rounded-lg hover:bg-primary/90 transition-all">START NOW</button>
+                                        <button className="px-4 py-2 border border-primary/50 text-primary font-bold rounded-lg hover:bg-primary/10 transition-all">WHY?</button>
+                                    </div>
                                 </div>
-                            </motion.div>
+                                
+                                <div className="space-y-6">
+                                    <div className="bg-surface/50 border border-border/50 rounded-2xl p-5 backdrop-blur-sm">
+                                        <h2 className="text-sm font-bold font-orbitron text-foreground/80 mb-2 uppercase tracking-wider">Path Progress</h2>
+                                        <div className="flex justify-between items-end mb-2">
+                                            <span className="text-2xl font-bold text-success">42%</span>
+                                            <span className="text-sm text-muted-foreground">Est: 42 days</span>
+                                        </div>
+                                        <div className="w-full bg-background rounded-full h-2"><div className="bg-success h-2 rounded-full" style={{width: '42%'}}></div></div>
+                                        <button onClick={() => window.location.href='/learning-path'} className="mt-4 text-xs font-bold text-primary hover:underline">VIEW LEARNING PATH →</button>
+                                    </div>
+                                    
+                                    <div className="bg-destructive/10 border border-destructive/30 rounded-2xl p-5 backdrop-blur-sm relative overflow-hidden">
+                                        <h2 className="text-sm font-bold font-orbitron text-destructive mb-2 uppercase tracking-wider flex items-center gap-2"><span className="animate-pulse">⚠</span> AI PREDICTION</h2>
+                                        <p className="text-sm text-foreground/90 mb-3">At your current learning trajectory, Thermodynamics is likely to become your next weak topic.</p>
+                                        <button className="text-xs font-bold text-destructive hover:underline">VIEW ANALYSIS →</button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </motion.section>
@@ -287,3 +295,4 @@ function CheckCircleIcon(props) {
         </svg>
     )
 }
+

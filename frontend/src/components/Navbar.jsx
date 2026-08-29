@@ -12,8 +12,8 @@ export default function Navbar() {
 
     const navItems = [
         { name: 'Home', path: '/home', icon: Home },
-        { name: 'Streams', path: '/streams', icon: BookOpen },
-        { name: 'Syllabus', path: '/syllabus', icon: FileText },
+        { name: 'Mock Tests', path: '/mock-tests', icon: BookOpen },
+        { name: 'Learning Path', path: '/learning-path', icon: FileText },
         { name: 'Knowledge Graph', path: '/graph', icon: BrainCircuit },
         { name: 'Progress', path: '/dashboard', icon: LayoutDashboard },
         { name: 'AI Tutor', path: '/chat', icon: MessageSquare },

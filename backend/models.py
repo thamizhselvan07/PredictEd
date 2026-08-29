@@ -16,6 +16,8 @@ class User(Base):
     
     attempts = relationship("QuizAttempt", back_populates="user")
     knowledge_nodes = relationship("KnowledgeNode", back_populates="user")
+    profile = relationship("LearnerProfile", back_populates="user", uselist=False)
+    learning_path = relationship("LearningPath", back_populates="user", uselist=False)
 
 class Stream(Base):
     __tablename__ = "streams"
@@ -127,4 +129,51 @@ class KnowledgeNode(Base):
 
     user = relationship("User", back_populates="knowledge_nodes")
 
+
+
+class LearnerProfile(Base):
+    __tablename__ = "learner_profiles"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    goal = Column(String, nullable=True)
+    target_career = Column(String, nullable=True)
+    available_time = Column(String, nullable=True)
+    learning_pace = Column(String, nullable=True)
+    strengths = Column(JSON, nullable=True) # list of skills
+    skill_gaps = Column(JSON, nullable=True) # list of skills
+    learning_preferences = Column(String, nullable=True)
+    
+    user = relationship("User", back_populates="profile")
+
+class LearningPath(Base):
+    __tablename__ = "learning_paths"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    goal_name = Column(String, nullable=True)
+    overall_progress = Column(Float, default=0.0)
+    estimated_completion = Column(String, nullable=True)
+    learning_velocity = Column(Float, default=0.0)
+    
+    user = relationship("User", back_populates="learning_path")
+    steps = relationship("PathStep", back_populates="path", cascade="all, delete-orphan", order_by="PathStep.phase_order")
+
+class PathStep(Base):
+    __tablename__ = "path_steps"
+
+    id = Column(Integer, primary_key=True, index=True)
+    path_id = Column(Integer, ForeignKey("learning_paths.id"))
+    phase_order = Column(Integer)
+    title = Column(String)
+    step_type = Column(String) # "course", "project", "assessment"
+    description = Column(String, nullable=True)
+    status = Column(String, default="locked") # "locked", "current", "completed", "needs_attention"
+    estimated_time = Column(String, nullable=True)
+    prerequisites = Column(JSON, nullable=True) # list of strings
+    related_subject_id = Column(Integer, ForeignKey("subjects.id"), nullable=True)
+    reasoning = Column(String, nullable=True)
+
+    path = relationship("LearningPath", back_populates="steps")
+    subject = relationship("Subject")
 

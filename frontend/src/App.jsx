@@ -14,6 +14,10 @@ import TopicSelection from './TopicSelection';
 import QuizList from './QuizList';
 import Syllabus from './Syllabus';
 import Home from './Home';
+import Onboarding from './Onboarding';
+import LearningPath from './LearningPath';
+import MockTests from './MockTests';
+import PostMockAnalysis from './PostMockAnalysis';
 import QuizGenerator from './components/QuizGenerator';
 import { GamificationProvider } from './contexts/GamificationContext';
 import { ThemeProvider } from './contexts/ThemeContext';
@@ -40,6 +44,10 @@ function App() {
 
                             {/* Protected Routes */}
                             <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
+                            <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
+                            <Route path="/learning-path" element={<ProtectedRoute><LearningPath /></ProtectedRoute>} />
+                            <Route path="/mock-tests" element={<ProtectedRoute><MockTests /></ProtectedRoute>} />
+                            <Route path="/mock-analysis" element={<ProtectedRoute><PostMockAnalysis /></ProtectedRoute>} />
                             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
                             <Route path="/streams" element={<ProtectedRoute><StreamSelection /></ProtectedRoute>} />
                             <Route path="/syllabus" element={<ProtectedRoute><Syllabus /></ProtectedRoute>} />

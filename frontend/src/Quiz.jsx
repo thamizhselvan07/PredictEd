@@ -85,7 +85,8 @@ export default function Quiz() {
                     clearInterval(interval);
                     // Auto-submit logic here or alert
                     alert("Time Up! Submitting...");
-                    navigate('/dashboard');
+                    addXp(100);
+                navigate('/mock-analysis');
                     return 0;
                 }
                 return t - 1;
@@ -131,8 +132,9 @@ export default function Quiz() {
             console.error(err);
             if (err.response?.status === 404) {
                 // Exam Over
-                alert("Exam Completed!");
-                navigate('/dashboard');
+                
+                addXp(100);
+                navigate('/mock-analysis');
             } else {
                 setError("Network Error");
             }
@@ -266,7 +268,7 @@ export default function Quiz() {
                     </div>
                     <div>
                         <h1 className="font-bold text-lg tracking-wide text-white">JEE/NEET MOCK 2024</h1>
-                        <p className="text-xs text-muted-foreground">Adaptive Mode Enabled</p>
+                        <div className="flex items-center gap-2"><p className="text-xs text-muted-foreground">Adaptive Mode Enabled</p><span className="hidden md:inline text-[10px] bg-primary/20 text-primary px-2 py-0.5 rounded border border-primary/30">AI ADAPTATION: Difficulty adjusting</span></div>
                     </div>
                 </div>
 

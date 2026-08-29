@@ -258,8 +258,8 @@ export default function KnowledgeGraph() {
 
                             {/* Topic Nodes */}
                             {layout.subjects.flatMap(s => s.topics).map((topic, i) => {
-                                const color = topic.strength >= 0.7 ? 'bg-emerald-500' : topic.strength >= 0.4 ? 'bg-amber-500' : 'bg-red-500';
-                                const ringColor = topic.strength >= 0.7 ? 'border-emerald-500/30' : topic.strength >= 0.4 ? 'border-amber-500/30' : 'border-red-500/30';
+                                const color = topic.strength >= 0.8 ? 'bg-emerald-500' : topic.strength >= 0.5 ? 'bg-cyan-500' : topic.strength >= 0 ? 'bg-red-500' : topic.strength === -1 ? 'bg-gray-500' : 'bg-purple-500';
+                                const ringColor = topic.strength >= 0.8 ? 'border-emerald-500/30' : topic.strength >= 0.5 ? 'border-cyan-500/30' : topic.strength >= 0 ? 'border-red-500/30' : topic.strength === -1 ? 'border-gray-500/30' : 'border-purple-500/30';
 
                                 return (
                                     <motion.div
