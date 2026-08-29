@@ -1,24 +1,26 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import Landing from './Landing';
 import Login from './Login';
 import Signup from './Signup';
+import Home from './Home';
 import Dashboard from './Dashboard';
-import Quiz from './Quiz';
-import KnowledgeGraph from './KnowledgeGraph';
-import Chat from './Chat';
-import ZenMode from './ZenMode';
 import StreamSelection from './StreamSelection';
 import ExamSelection from './ExamSelection';
 import SubjectSelection from './SubjectSelection';
 import TopicSelection from './TopicSelection';
 import QuizList from './QuizList';
+import Quiz from './Quiz';
+import KnowledgeGraph from './KnowledgeGraph';
+import Chat from './Chat';
 import Syllabus from './Syllabus';
-import Home from './Home';
+import ZenMode from './ZenMode';
+import QuizGenerator from './components/QuizGenerator';
 import Onboarding from './Onboarding';
 import LearningPath from './LearningPath';
 import MockTests from './MockTests';
 import PostMockAnalysis from './PostMockAnalysis';
-import QuizGenerator from './components/QuizGenerator';
+
 import { GamificationProvider } from './contexts/GamificationContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 
@@ -26,7 +28,7 @@ const ProtectedRoute = ({ children }) => {
     const user = JSON.parse(localStorage.getItem('user'));
     // In production, verify token validity with backend
     if (!user) {
-        return <Navigate to="/" replace />;
+        return <Navigate to="/login" replace />;
     }
     return children;
 };
@@ -36,10 +38,11 @@ function App() {
         <ThemeProvider>
             <GamificationProvider>
                 <Router>
-                    <div className="min-h-screen bg-background text-foreground font-sans antialiased">
+                    <div className="min-h-screen bg-background font-sans text-foreground">
                         <Routes>
-                            {/* Auth Routes */}
-                            <Route path="/" element={<Login />} />
+                            {/* Public Routes */}
+                            <Route path="/" element={<Landing />} />
+                            <Route path="/login" element={<Login />} />
                             <Route path="/signup" element={<Signup />} />
 
                             {/* Protected Routes */}
